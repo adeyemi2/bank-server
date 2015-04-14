@@ -1,0 +1,8 @@
+test example:
+
+1. open up a window and do ./server <port <= 5 numbers >
+2. open up a new window and do ./client localhost <port above>
+3. open up another new window do ./client localhost <port above> to see another thread created
+4. repeat 3 to keep seeing more threads pop up
+
+
