@@ -7,6 +7,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+/* User created libraries */
+#include "accounts.h"
 
 struct user_args{
    int argc;
@@ -26,12 +28,38 @@ void error(const char *msg)
    exit(1);
 }
 
-int client_service_thread(void* params)
+
+/* Global Variables */
+AccountStorage ACCOUNTS; 
+ACCOUNTS = malloc(sizeof(AccountStorage));
+
+void print_accounts()
 {
+   int i;
+   AccountStorage accounts = ACCOUNTS;
+   for(i = 0; i < accounts.length(); i++){
+     Account tmpAccount = accounts[i];
+     printf("Account Name: %s \n", tmpAccount->name);
+     printf("Balance: %f \n", tmpAccount->balance);
+     if(tmpAccount->in_session == 1){
+        printf("IN SESSION \n");
+     }
+   }
+}
+
+
+void client_service_thread(void* params)
+{
+  
   SockInfo cs_sockinfo = (SockInfo) params;
   int n;
-
+  
   printf("In cs thread: %i ", cs_sockinfo->sockfd);
+
+  n = write(cs_sockinfo->sockfd, "What's the message?", 18);
+  if( n < 0) {
+    error("ERROR on writing to socket");
+  }
 
   char buffer[256];
   bzero(buffer, 256);
@@ -40,32 +68,11 @@ int client_service_thread(void* params)
     error("ERROR reading from socket \n");
   }
 
-  printf("Here is the message from thread %i : %s \n", cs_sockinfo->sockfd, buffer);
-
-  n = write(cs_sockinfo->sockfd, "Gotchu brah", 18);
-  if( n < 0) {
-    error("ERROR on writing to socket");
-  }
   close(cs_sockinfo->sockfd);
   pthread_exit(NULL);
-
-  /* Reading client input into a buffer */
-  /*
-  bzero(buffer, 256);
-  n = read( newsockfd, buffer, 255 );
-  if( n < 0 ){
-     error("ERROR reading from socket \n");
-  }
-
-
-  printf("Here is the message: %s \n", buffer);
-  n = write(newsockfd, "I got your message", 18);
-  if( n < 0 ){
-     error("ERROR writing to socket");
-     */
 }
 
-int session_acceptor_thread(void* params)
+void session_acceptor_thread(void* params)
 {
    UserArgs args = (UserArgs)params;
    printf("Session Acceptor Thread Created! \n");
@@ -75,7 +82,6 @@ int session_acceptor_thread(void* params)
    //TCP/IP server logic
    int sockfd, newsockfd, portno;
    socklen_t clilen;
-   char buffer[256];
    struct sockaddr_in serv_addr, cli_addr;
    int n;
 
@@ -124,13 +130,12 @@ int session_acceptor_thread(void* params)
       tids[conn_count] = pthread_create( &threads[conn_count],
         NULL, (void *)client_service_thread, (void*)cs_sockinfo);
 
-      printf("connection count: %i \n", conn_count);
       conn_count += 1;
+      printf("connection count: %i \n", conn_count);
    }
    close(sockfd);
    pthread_join(threads[conn_count], NULL);
    pthread_exit(NULL);
-   return 0;
 }
 
 

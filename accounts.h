@@ -8,9 +8,10 @@ struct account{
   float balance;
   int in_session;
 };
-typedef struct account* Account;
+typedef struct account* AccountPtr;
 
 struct account_storage{
+
   Account[MAX_ACCOUNTS] accounts;
 };
 typedef struct account_storage* AccountStorage;
