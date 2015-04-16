@@ -30,13 +30,13 @@ void error(const char *msg)
 
 
 /* Global Variables */
-AccountStorage ACCOUNTS; 
-ACCOUNTS = malloc(sizeof(AccountStorage));
+AccountStoragePtr ACCOUNTS; 
+ACCOUNTS = malloc(sizeof(AccountStoragePtr));
 
 void print_accounts()
 {
    int i;
-   AccountStorage accounts = ACCOUNTS;
+   AccountStoragePtr accounts = ACCOUNTS;
    for(i = 0; i < accounts.length(); i++){
      Account tmpAccount = accounts[i];
      printf("Account Name: %s \n", tmpAccount->name);
