@@ -7,15 +7,16 @@ struct account{
   char *name;
   float balance;
   int in_session;
-}
+};
 typedef struct account* Account;
 
 struct account_storage{
-  Account[MAX_ACCOUNTS] accounts;
-}
+  Account accounts[MAX_ACCOUNTS];
+};
+
 typedef struct account_storage* AccountStorage;
 
-Account get_account(char *accountname);
+Account get_account(char *accountname, AccountStorage collection);
 
 
 #endif
