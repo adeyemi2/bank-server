@@ -14,7 +14,7 @@ struct account_storage{
 
   AccountPtr accounts[MAX_ACCOUNTS];
 };
-typedef struct account_storage* AccountStorage;
+typedef struct account_storage* AccountStoragePtr;
 
 AccountPtr get_account(char *accountname);
 
