@@ -76,9 +76,9 @@ void createClientServiceThread(void * params)
 {
 
   SockInfo cs_sockinfo = (SockInfo) params;
-  int n, i, k;
+  int n;
   char buffer[256];
-  char *client_command, *client_command_argument;
+  char *client_command;
 
   printf("In cs thread: %i \n", cs_sockinfo->sockfd);
 
@@ -91,27 +91,14 @@ void createClientServiceThread(void * params)
 
   n = read(cs_sockinfo->sockfd, buffer, 255);
   /* find out what the buffer holds */
-  command = malloc(sizeof(buffer));
-  command = getCommandFromBuffer(buffer);
-/*
-  word = getWordFromBuffer(buffer);
-  i = 0;
-  while( buffer[i] != '\0' && !isspace(buffer[i]) ) {
-    i++;
-  }
-  strncpy(client_command, buffer, i);
-
-  k = i++;
-  if( buffer[k] != '\0' && !isspace(buffer[k])) {
-    k++;
-  }
-  strncpy(client_command_argument,buffer+i, k);
-  */
-
+  client_command = malloc(sizeof(buffer));
+  client_command = getCommandFromBuffer(buffer);
+  /* THIS IS WHERE WE GOTTA DO SHIT
   while(client_command != NULL) {
     handleClientCommand(client_command, client_command_argument);
 
   }
+  */
 
   if( n < 0){
     error("ERROR reading from socket \n");
