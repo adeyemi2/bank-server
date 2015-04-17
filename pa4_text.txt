@@ -1,0 +1,21 @@
+BANK SERVER
+GABRIEL SZABO//GTS37
+JESSICA ACKERMAN//JA252
+
+NAME
+	server - stores bank account information
+
+SYNOPSIS
+	server [ port_number ]
+
+DESCRIPTION
+	Server contains a data structure to store accounts, which have relevant account information. Its main method creates two threads, one to accept client sessions and another to print account details. It executes the latter every 20 seconds, locking the the former while it is doing so. The client session acceptor thread accepts client interaction sessions over tcp/ip and spawns service threads to interact with the accounts
+
+NAME
+	client - interacts with server
+
+SYNOPSIS
+	client [ host_address ] [ port_number ]
+
+DESCRIPTION
+      Client connects to a server and can then interact with the server by entering the commands as prompted by the server. 
