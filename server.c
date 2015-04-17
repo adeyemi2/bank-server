@@ -29,10 +29,6 @@ void error(const char *msg)
 }
 
 
-/* Global Variables */
-AccountStoragePtr ACCOUNTS; 
-ACCOUNTS = malloc(sizeof(AccountStoragePtr));
-
 void print_accounts()
 {
    int i;
@@ -48,7 +44,7 @@ void print_accounts()
 }
 
 
-void client_service_thread(void* params)
+void createClientServiceThread(void* params)
 {
   
   SockInfo cs_sockinfo = (SockInfo) params;
@@ -72,7 +68,7 @@ void client_service_thread(void* params)
   pthread_exit(NULL);
 }
 
-void session_acceptor_thread(void* params)
+void createSessionAcceptorThread(void* params)
 {
    UserArgs args = (UserArgs)params;
    printf("Session Acceptor Thread Created! \n");
@@ -128,7 +124,7 @@ void session_acceptor_thread(void* params)
       }
 
       tids[conn_count] = pthread_create( &threads[conn_count],
-        NULL, (void *)client_service_thread, (void*)cs_sockinfo);
+        NULL, (void *)createClientServiceThread, (void*)cs_sockinfo);
 
       conn_count += 1;
       printf("connection count: %i \n", conn_count);
@@ -142,7 +138,7 @@ void session_acceptor_thread(void* params)
 int main(int argc, char** argv){
 
   //Session Acceptor Thread
-  pthread_t thread;
+  pthread_t session_acceptor_thread;
   int rc, i;
   i = 0;
 
@@ -152,13 +148,13 @@ int main(int argc, char** argv){
   test_obj->argc = argc;
   test_obj->argv = argv;
 
-  rc = pthread_create( &thread, NULL, (void *) session_acceptor_thread, (void* )test_obj);
+  rc = pthread_create( &session_acceptor_thread, NULL, (void *) createSessionAcceptorThread, (void* )test_obj);
 
   if( rc != 0 ){
      printf("pthread_create failed \n");
      return 0;
   }
 
-  pthread_join(thread, NULL);
+  pthread_join(session_acceptor_thread, NULL);
   return 0;
 }
