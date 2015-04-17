@@ -31,6 +31,7 @@ int deposit(float amount, AccountPtr account);
 //withdraw should change account balance and return 0 for failure 1 for success
 int withdraw(float amount, AccountPtr account);
 
+// print account details
 void PrintAccount(AccountPtr account);
 
 #endif

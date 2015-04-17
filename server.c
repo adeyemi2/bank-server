@@ -44,7 +44,7 @@ void print_accounts()
 }
 
 
-void createClientServiceThread(void* params)
+void createClientServiceThread()
 {
   
   SockInfo cs_sockinfo = (SockInfo) params;
@@ -52,7 +52,7 @@ void createClientServiceThread(void* params)
   
   printf("In cs thread: %i ", cs_sockinfo->sockfd);
 
-  n = write(cs_sockinfo->sockfd, "What's the message?", 18);
+  n = write(cs_sockinfo->sockfd, "Connected to server. Ready for commands", 18);
   if( n < 0) {
     error("ERROR on writing to socket");
   }
