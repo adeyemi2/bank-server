@@ -30,7 +30,8 @@ char* getWordFromBuffer(char* buffer)
   }
 }
 
-void createClientServiceThread(void* params)
+void createClientServiceThread(void * params)
+
 {
 
   SockInfo cs_sockinfo = (SockInfo) params;
@@ -119,8 +120,8 @@ void createSessionAcceptorThread(void* params)
 
 
 int main(int argc, char** argv){
-  ACCOUNTS = (AccountStoragePtr) malloc(sizeof(struct account_storage));
 
+  ACCOUNTS = (AccountStoragePtr) malloc(sizeof(struct account_storage));
   //Session Acceptor Thread
   pthread_t thread;
   int rc, i;
