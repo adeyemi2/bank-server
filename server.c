@@ -11,23 +11,39 @@
 #include "accounts.h"
 #include "server.h"
 
+#define WITHDRAW "withdraw\0"
+#define DEPOSIT "deposit\0"
+#define SERVE "serve\0"
+#define QUERY "query\0"
+#define END "end\0"
+#define QUIT "quit\0"
+#define CREATE "create\0"
+
+
 /* Global Variables */
 AccountStoragePtr ACCOUNTS;
 
-char* getWordFromBuffer(char* buffer)
+char* getCommandFromBuffer(char* buffer)
 {
   char* tmp_buffer = buffer;
   char* word;
-  int i = 0;
-  char * new_str ;
-  if((new_str = malloc(strlen(str1)+strlen(str2)+1)) != NULL){
-      new_str[0] = '\0';   // ensures the memory is an empty string
-      strcat(new_str,str1);
-      strcat(new_str,str2);
-  } else {
-      fprintf(STDERR,"malloc failed!\n");
-      // exit?
+  int nt_index;
+  int i;
+
+  nt_index = 0;
+  while(tmp_buffer[nt_index] != '\0'){
+    nt_index += 1;
   }
+
+  i = 0;
+  word = malloc(sizeof(tmp_buffer));
+  while(i < nt_index - 1){
+    word[i] = tmp_buffer[i];
+    printf("%i \t %c \n", i, word[i]);
+    i += 1;
+  }
+
+  return word;
 }
 
 void createClientServiceThread(void * params)
@@ -37,8 +53,9 @@ void createClientServiceThread(void * params)
   SockInfo cs_sockinfo = (SockInfo) params;
   int n;
   char buffer[256];
+  char *command;
 
-  printf("In cs thread: %i ", cs_sockinfo->sockfd);
+  printf("In cs thread: %i \n", cs_sockinfo->sockfd);
 
   n = write(cs_sockinfo->sockfd, "Connected to server. Ready for commands", 255);
   if( n < 0) {
@@ -49,7 +66,8 @@ void createClientServiceThread(void * params)
 
   n = read(cs_sockinfo->sockfd, buffer, 255);
   /* find out what the buffer holds */
-  word = getWordFromBuffer(buffer);
+  command = malloc(sizeof(buffer));
+  command = getCommandFromBuffer(buffer);
 
 
   if( n < 0){
@@ -110,7 +128,7 @@ void createSessionAcceptorThread(void* params)
         error("ERROR on accept");
       }
       tids[conn_count] = pthread_create( &threads[conn_count],
-        NULL, (void *)createClientServiceThread, (void*)cs_sockinfo);
+        NULL, (void*(*)(void*))createClientServiceThread, (void*)cs_sockinfo);
       conn_count += 1;
    }
    close(sockfd);
@@ -131,7 +149,7 @@ int main(int argc, char** argv){
   test_obj->argc = argc;
   test_obj->argv = argv;
 
-  rc = pthread_create( &thread, NULL, (void *) createSessionAcceptorThread, (void* )test_obj);
+  rc = pthread_create( &thread, NULL, (void*(*)(void*))createSessionAcceptorThread, (void* )test_obj);
 
   if( rc != 0 ){
      printf("pthread_create failed \n");

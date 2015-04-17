@@ -20,13 +20,13 @@ void accountServe(int socket, char* account_name, AccountStoragePtr all_accounts
 	int tmp_account_index;
 	tmp_account_index = 0;
 	do{
-		i += 1;
+		tmp_account_index += 1;
 		if(strcmp(all_accounts->accounts[tmp_account_index]->name, account_name) == 0)
 			break;
 	} while( strcmp(all_accounts->accounts[tmp_account_index]->name, account_name) != 0);
 
 	all_accounts->accounts[tmp_account_index]->in_session = 1;
-	accounts->connections[tmp_account_index] = socket;
+	all_accounts->connections[tmp_account_index] = socket;
 }
 
 AccountPtr accountCreate(char* name, int index){
