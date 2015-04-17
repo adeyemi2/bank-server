@@ -15,9 +15,25 @@ AccountPtr get_account(char *accountname, AccountStoragePtr collection) {
   return NULL;
 }
 
+void accountServe(int socket, char* account_name, AccountStoragePtr all_accounts){
+	/* Find account in accounts that matches name of account name */
+	int tmp_account_index;
+	tmp_account_index = 0;
+	do{
+		i += 1;
+		if(strcmp(all_accounts->accounts[tmp_account_index]->name, account_name) == 0)
+			break;
+	} while( strcmp(all_accounts->accounts[tmp_account_index]->name, account_name) != 0);
+
+	all_accounts->accounts[tmp_account_index]->in_session = 1;
+	accounts->connections[tmp_account_index] = socket;
+}
+
 AccountPtr accountCreate(char* name, int index){
-	//check account name is valid 
-	if(name == NULL){
+
+	//BREAK
+	//check account name is valid
+	if(name == NULL || strcmp(name, "") == 0){
 		printf("NULL name passed to AccountCreate");
 		return NULL;
 	}
@@ -35,6 +51,7 @@ AccountPtr accountCreate(char* name, int index){
 		return acc;
 	}
 }
+
 //return balance on success, -1 on failure
 float getBalance(AccountPtr account){
 	if(account == NULL){
@@ -96,7 +113,7 @@ if(account == NULL){
     }
     printf("<Account: %s, Balance: %f, Currently Active: %s >" , account->name, account->balance, active);
   }
-} 
+}
 
 void printAccounts(AccountStoragePtr bank){
 	int i = 0;

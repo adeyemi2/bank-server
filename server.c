@@ -11,13 +11,26 @@
 #include "accounts.h"
 #include "server.h"
 
-
 /* Global Variables */
 AccountStoragePtr ACCOUNTS;
-ACCOUNTS = malloc(sizeof(AccountStoragePtr));
 
+char* getWordFromBuffer(char* buffer)
+{
+  char* tmp_buffer = buffer;
+  char* word;
+  int i = 0;
+  char * new_str ;
+  if((new_str = malloc(strlen(str1)+strlen(str2)+1)) != NULL){
+      new_str[0] = '\0';   // ensures the memory is an empty string
+      strcat(new_str,str1);
+      strcat(new_str,str2);
+  } else {
+      fprintf(STDERR,"malloc failed!\n");
+      // exit?
+  }
+}
 
-void createClientServiceThread()
+void createClientServiceThread(void* params)
 {
 
   SockInfo cs_sockinfo = (SockInfo) params;
@@ -26,14 +39,17 @@ void createClientServiceThread()
 
   printf("In cs thread: %i ", cs_sockinfo->sockfd);
 
-  n = write(cs_sockinfo->sockfd, "Connected to server. Ready for commands", 18);
+  n = write(cs_sockinfo->sockfd, "Connected to server. Ready for commands", 255);
   if( n < 0) {
     error("ERROR on writing to socket");
   }
 
   bzero(buffer, 256);
+
   n = read(cs_sockinfo->sockfd, buffer, 255);
-  printf("buffer %s", buffer);
+  /* find out what the buffer holds */
+  word = getWordFromBuffer(buffer);
+
 
   if( n < 0){
     error("ERROR reading from socket \n");
@@ -103,7 +119,7 @@ void createSessionAcceptorThread(void* params)
 
 
 int main(int argc, char** argv){
-
+  ACCOUNTS = (AccountStoragePtr) malloc(sizeof(struct account_storage));
 
   //Session Acceptor Thread
   pthread_t thread;
