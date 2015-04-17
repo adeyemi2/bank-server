@@ -29,22 +29,12 @@ void error(const char *msg)
 }
 
 
-void print_accounts()
-{
-   int i;
-   AccountStoragePtr accounts = ACCOUNTS;
-   for(i = 0; i < accounts.length(); i++){
-     Account tmpAccount = accounts[i];
-     printf("Account Name: %s \n", tmpAccount->name);
-     printf("Balance: %f \n", tmpAccount->balance);
-     if(tmpAccount->in_session == 1){
-        printf("IN SESSION \n");
-     }
-   }
-}
+/* Global Variables */
+//struct account_storage ACCOUNTS; 
+//ACCOUNTS = malloc(sizeof(struct account_storage));
 
 
-void createClientServiceThread(void* params)
+void client_service_thread(void* params)
 {
   
   SockInfo cs_sockinfo = (SockInfo) params;
@@ -60,6 +50,8 @@ void createClientServiceThread(void* params)
   char buffer[256];
   bzero(buffer, 256);
   n = read(cs_sockinfo->sockfd, buffer, 255);
+  printf("buffer %s", buffer);
+
   if( n < 0){
     error("ERROR reading from socket \n");
   }
@@ -68,7 +60,7 @@ void createClientServiceThread(void* params)
   pthread_exit(NULL);
 }
 
-void createSessionAcceptorThread(void* params)
+void session_acceptor_thread(void* params)
 {
    UserArgs args = (UserArgs)params;
    printf("Session Acceptor Thread Created! \n");
@@ -124,7 +116,7 @@ void createSessionAcceptorThread(void* params)
       }
 
       tids[conn_count] = pthread_create( &threads[conn_count],
-        NULL, (void *)createClientServiceThread, (void*)cs_sockinfo);
+        NULL, (void *)client_service_thread, (void*)cs_sockinfo);
 
       conn_count += 1;
       printf("connection count: %i \n", conn_count);
@@ -138,7 +130,7 @@ void createSessionAcceptorThread(void* params)
 int main(int argc, char** argv){
 
   //Session Acceptor Thread
-  pthread_t session_acceptor_thread;
+  pthread_t thread;
   int rc, i;
   i = 0;
 
@@ -148,13 +140,13 @@ int main(int argc, char** argv){
   test_obj->argc = argc;
   test_obj->argv = argv;
 
-  rc = pthread_create( &session_acceptor_thread, NULL, (void *) createSessionAcceptorThread, (void* )test_obj);
+  rc = pthread_create( &thread, NULL, (void *) session_acceptor_thread, (void* )test_obj);
 
   if( rc != 0 ){
      printf("pthread_create failed \n");
      return 0;
   }
 
-  pthread_join(session_acceptor_thread, NULL);
+  pthread_join(thread, NULL);
   return 0;
 }
