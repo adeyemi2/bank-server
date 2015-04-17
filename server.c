@@ -1,4 +1,5 @@
 #include <string.h>
+#include <ctype.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,13 +31,38 @@ char* getWordFromBuffer(char* buffer)
   }
 }
 
-void createClientServiceThread(void * params)
+void handleClientCommand(char* command, char* argument) {
 
+  if( argument == NULL) {
+    if( strcmp(command, "query") == 0) {
+
+    }else if( strcmp(command, "end") == 0) {
+
+    }else if( strcmp(command, "quit") == 0) {
+
+    }
+  }else{
+
+    if( strcmp(command, "create") == 0) {
+
+
+    }else if( strcmp(command, "serve") == 0) {
+
+    } else if( strcmp(command, "deposit") == 0) {
+
+    } else if( strcmp(command, "withdraw") == 0) {
+
+    }
+  }
+}
+
+void createClientServiceThread(void * params)
 {
 
   SockInfo cs_sockinfo = (SockInfo) params;
-  int n;
+  int n, i, k;
   char buffer[256];
+  char *client_command, *client_command_argument;
 
   printf("In cs thread: %i ", cs_sockinfo->sockfd);
 
@@ -50,7 +76,22 @@ void createClientServiceThread(void * params)
   n = read(cs_sockinfo->sockfd, buffer, 255);
   /* find out what the buffer holds */
   word = getWordFromBuffer(buffer);
+  i = 0;
+  while( buffer[i] != '\0' && !isspace(buffer[i]) ) {
+    i++;
+  }
+  strncpy(client_command, buffer, i);
+  
+  k = i++;
+  if( buffer[k] != '\0' && !isspace(buffer[k])) {
+    k++;
+  }
+  strncpy(client_command_argument,buffer+i, k);
 
+  while(client_command != NULL) {
+    handleClientCommand(client_command, client_command_argument);
+
+  }
 
   if( n < 0){
     error("ERROR reading from socket \n");

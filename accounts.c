@@ -20,13 +20,28 @@ void accountServe(int socket, char* account_name, AccountStoragePtr all_accounts
 	int tmp_account_index;
 	tmp_account_index = 0;
 	do{
-		i += 1;
 		if(strcmp(all_accounts->accounts[tmp_account_index]->name, account_name) == 0)
 			break;
+    tmp_account_index += 1;
 	} while( strcmp(all_accounts->accounts[tmp_account_index]->name, account_name) != 0);
 
 	all_accounts->accounts[tmp_account_index]->in_session = 1;
-	accounts->connections[tmp_account_index] = socket;
+	all_accounts->connections[tmp_account_index] = socket;
+}
+
+void accountEndConnection(int socket, AccountStoragePtr all_accounts) {
+  int socket_index;
+  socket_index = 0;
+  /* find the index that corresponds to the account and socket */
+  for( socket_index < MAX_ACCOUNTS, socket_index++) {
+    if( all_accounts->connections[socket_index] != NULL && all_accounts->connections[socket_index] == socket) {
+      break;
+    }
+  }
+
+  all_accounts->accounts[socket_index]->in_session = 0;
+  all_accounts->connections[socket_index] = 0;
+
 }
 
 AccountPtr accountCreate(char* name, int index){
