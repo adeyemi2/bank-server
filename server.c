@@ -28,43 +28,33 @@ AccountStoragePtr ACCOUNTS;
 char** tokenizeCommand(char* buffer)
 {
   char* tmp_buffer = buffer;
-  int space_index;
   char* first_word;
   char* second_word;
   char** product;
+  const char delimiter[2] = " ";
+  char* tmp_token;
 
   int i;
 
   product = malloc(sizeof(tmp_buffer));
-  /* Find index of space */
-  space_index = 0;
-  while(tmp_buffer[space_index] != SPACE_DELIMITER || space_index <= strlen(tmp_buffer)){
-    space_index += 1;
-  }
-  /* If Buffer is one word */
-  if(space_index == strlen(tmp_buffer)){
 
-
-    product[0] = tmp_buffer;
-    product[1] = NULL;
-    return product;
-  }
-
-  i = 0;
   first_word = malloc(sizeof(tmp_buffer));
   second_word = malloc(sizeof(tmp_buffer));
 
   /* First Word */
+  tmp_token = malloc(sizeof(tmp_buffer));
+  tmp_token = strtok( tmp_buffer, delimiter);
 
-  while( i < space_index - 1 ){
-    first_word[i] = tmp_buffer[i];
-    i += 1;
-  }
-
-  /* Second Word */
-
-  while( i < strlen(buffer)){
-    second_word[i] = tmp_buffer[i];
+  i = 0;
+  while( tmp_token != NULL ){
+    if(i == 0){
+      first_word = tmp_token;
+    }
+    if(i == 1){
+      second_word = tmp_token;
+      break;
+    }
+    tmp_token = strtok(NULL, delimiter);
     i += 1;
   }
 
@@ -104,7 +94,7 @@ ClientRequestPtr getCommandFromBuffer(char* buffer)
   structured_client_information->command = client_command[0];
 
   structured_client_information->argument = malloc(sizeof(tmp_buffer));
-  structured_client_information->argument = malloc(sizeof(tmp_buffer));
+  structured_client_information->argument = client_command[1];
 
 
   return structured_client_information;
@@ -160,10 +150,6 @@ void createClientServiceThread(void * params)
     strlen(client_information->command),
     client_information->argument,
     strlen(client_information->argument));
-
-
-  printf("comparison: %i ",
-    strcmp(client_information->command, DEPOSIT));
 
   /* THIS IS WHERE WE GOTTA DO SHIT
   while(client_command != NULL) {
