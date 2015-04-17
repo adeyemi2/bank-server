@@ -11,13 +11,10 @@
 #include "accounts.h"
 #include "server.h"
 
-
 /* Global Variables */
-AccountStoragePtr ACCOUNTS;
-ACCOUNTS = malloc(sizeof(AccountStoragePtr));
+AccountStoragePtr bank;
 
-
-void createClientServiceThread()
+void createClientServiceThread(void * params)
 {
 
   SockInfo cs_sockinfo = (SockInfo) params;
@@ -104,7 +101,7 @@ void createSessionAcceptorThread(void* params)
 
 int main(int argc, char** argv){
 
-
+  bank = (AccountStoragePtr) malloc(sizeof(struct account_storage));
   //Session Acceptor Thread
   pthread_t thread;
   int rc, i;
