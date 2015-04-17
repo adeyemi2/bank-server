@@ -13,6 +13,12 @@ struct sock_info{
 };
 typedef struct sock_info* SockInfo;
 
+struct client_request{
+  char* command;
+  char* argument;
+};
+typedef struct client_request* ClientRequestPtr;
+
 void error(const char *msg)
 {
    perror(msg);

@@ -20,16 +20,71 @@
 #define QUIT "quit\0"
 #define CREATE "create\0"
 
+#define SPACE_DELIMITER ' '
 
 /* Global Variables */
 AccountStoragePtr ACCOUNTS;
 
-char* getCommandFromBuffer(char* buffer)
+char** tokenizeCommand(char* buffer)
+{
+  char* tmp_buffer = buffer;
+  int space_index;
+  char* first_word;
+  char* second_word;
+  char** product;
+
+  int i;
+
+  product = malloc(sizeof(tmp_buffer));
+  /* Find index of space */
+  space_index = 0;
+  while(tmp_buffer[space_index] != SPACE_DELIMITER || space_index <= strlen(tmp_buffer)){
+    space_index += 1;
+  }
+  /* If Buffer is one word */
+  if(space_index == strlen(tmp_buffer)){
+
+
+    product[0] = tmp_buffer;
+    product[1] = NULL;
+    return product;
+  }
+
+  i = 0;
+  first_word = malloc(sizeof(tmp_buffer));
+  second_word = malloc(sizeof(tmp_buffer));
+
+  /* First Word */
+
+  while( i < space_index - 1 ){
+    first_word[i] = tmp_buffer[i];
+    i += 1;
+  }
+
+  /* Second Word */
+
+  while( i < strlen(buffer)){
+    second_word[i] = tmp_buffer[i];
+    i += 1;
+  }
+
+  product[0] = first_word;
+  product[1] = second_word;
+
+  return product;
+}
+
+ClientRequestPtr getCommandFromBuffer(char* buffer)
 {
   char* tmp_buffer = buffer;
   char* word;
   int nt_index;
   int i;
+  char** client_command;
+  ClientRequestPtr structured_client_information;
+
+  client_command = malloc(sizeof(tmp_buffer)*2);
+  structured_client_information = malloc(sizeof(struct client_request));
 
   nt_index = 0;
   while(tmp_buffer[nt_index] != '\0'){
@@ -40,11 +95,20 @@ char* getCommandFromBuffer(char* buffer)
   word = malloc(sizeof(tmp_buffer));
   while(i < nt_index - 1){
     word[i] = tmp_buffer[i];
-    printf("%i \t %c \n", i, word[i]);
     i += 1;
   }
 
-  return word;
+  client_command = tokenizeCommand(tmp_buffer);
+
+  structured_client_information->command = malloc(sizeof(tmp_buffer));
+  structured_client_information->command = client_command[0];
+
+  structured_client_information->argument = malloc(sizeof(tmp_buffer));
+  structured_client_information->argument = malloc(sizeof(tmp_buffer));
+
+
+  return structured_client_information;
+
 }
 
 void handleClientCommand(char* command, char* argument) {
@@ -78,7 +142,7 @@ void createClientServiceThread(void * params)
   SockInfo cs_sockinfo = (SockInfo) params;
   int n;
   char buffer[256];
-  char *client_command;
+  ClientRequestPtr client_information;
 
   printf("In cs thread: %i \n", cs_sockinfo->sockfd);
 
@@ -91,8 +155,16 @@ void createClientServiceThread(void * params)
 
   n = read(cs_sockinfo->sockfd, buffer, 255);
   /* find out what the buffer holds */
-  client_command = malloc(sizeof(buffer));
-  client_command = getCommandFromBuffer(buffer);
+  client_information = getCommandFromBuffer(buffer);
+  printf("%s %lu \t %s %lu \n", client_information->command,
+    strlen(client_information->command),
+    client_information->argument,
+    strlen(client_information->argument));
+
+
+  printf("comparison: %i ",
+    strcmp(client_information->command, DEPOSIT));
+
   /* THIS IS WHERE WE GOTTA DO SHIT
   while(client_command != NULL) {
     handleClientCommand(client_command, client_command_argument);
