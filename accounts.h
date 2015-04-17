@@ -12,9 +12,9 @@ typedef struct account* AccountPtr;
 
 struct account_storage{
 
-  Account[MAX_ACCOUNTS] accounts;
+  AccountPtr accounts[MAX_ACCOUNTS];
 };
-typedef struct account_storage* AccountStorage;
+typedef struct account_storage* AccountStoragePtr;
 
 AccountPtr get_account(char *accountname);
 

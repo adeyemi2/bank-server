@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
          error("ERROR reading from socket");
     printf("%s\n",buffer);
 
- 
+
     bzero(buffer, 256);
     fgets(buffer, 255, stdin);
     n = write(sockfd, buffer, strlen(buffer));
