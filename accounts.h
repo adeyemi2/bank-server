@@ -11,7 +11,7 @@ struct account{
 typedef struct account* AccountPtr;
 
 struct account_storage{
-  int connections[MAX_ACCOUNTS];
+  int threads[MAX_ACCOUNTS];
   AccountPtr accounts[MAX_ACCOUNTS];
 };
 typedef struct account_storage* AccountStoragePtr;
