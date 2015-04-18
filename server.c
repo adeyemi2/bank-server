@@ -30,15 +30,43 @@ pthread_mutex_t lock;
 
 int handleClientCommand(int thread, ClientRequestPtr client_information)
 {
+  float balance;
   if(strcmp(client_information->argument, EMPTY_STRING) == 0){
     if(strcmp(client_information->command, QUERY) == 0){
-      accountQuery(int thread);
+      balance = accountQuery(int thread);
+      return balance;
     }
 
     if(strcmp(client_information->command, END) == 0){
-      account
+      accountEnd(int thread);
+      return 1;
+    }
+
+    if(strcmp(client_information->command, QUIT)) == 0){
+      accountEnd(int thread);
+      return 1;
+    }
+  } else {
+    if(strcmp(client_information->command, WITHDRAW) == 0){
+      accountWithdraw(int thread, client_information->argument);
+      return 1;
+    }
+
+    if(strcmp(client_information->command, DEPOSIT) == 0){
+      accountDeposit(int thread, client_information->argument);
+      return 1;
+    }
+
+    if(strcmp(client_information->command, CREATE) == 0){
+      accountCreate(int thread, client_information->argument);
+      return 1;
+    }
+    if(strcmp(client_information->command, SERVE) == 0){
+      accountServe(int thread, client_information->argument);
+      return 1;
     }
   }
+  return 0;
 }
 
 /* Thread that runs every twenty seconds,
