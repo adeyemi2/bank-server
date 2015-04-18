@@ -8,6 +8,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+
 /* User created libraries */
 #include "accounts.h"
 #include "server.h"
@@ -20,10 +21,30 @@
 #define QUIT "quit\0"
 #define CREATE "create\0"
 
-#define SPACE_DELIMITER ' '
+#define SLEEP_TIME 5 /*make sure to change to 20 before submission */
 
 /* Global Variables */
 AccountStoragePtr ACCOUNTS;
+
+/* Thread that runs every twenty seconds,
+which prints the account information*/
+void *writeAccountsEveryTwentySeconds(void *arg)
+{
+  int account_index;
+
+  while(1){
+    sleep(SLEEP_TIME);
+    if(ACCOUNTS->accounts[0] != NULL){
+      for(account_index = 0; account_index <= MAX_ACCOUNTS; account_index++){
+        printf("Name: %s \n", ACCOUNTS->accounts[account_index]->name);
+        printf("Balance: %f \n", ACCOUNTS->accounts[account_index]->balance);
+        printf("IN SESSION: %i \n\n\n", ACCOUNTS->accounts[account_index]->in_session);
+      }
+    }
+    printf("Sup Simple Simon \n");
+  }
+  pthread_exit(NULL);
+}
 
 char** tokenizeCommand(char* buffer)
 {
@@ -128,11 +149,15 @@ void handleClientCommand(char* command, char* argument) {
 
 void createClientServiceThread(void * params)
 {
-
+  int timer_thread_tid;
+  pthread_t timer_thread;
   SockInfo cs_sockinfo = (SockInfo) params;
   int n;
   char buffer[256];
   ClientRequestPtr client_information;
+
+  timer_thread_tid = pthread_create(&timer_thread, NULL,
+    (void*(*)(void*))writeAccountsEveryTwentySeconds, NULL);
 
   printf("In cs thread: %i \n", cs_sockinfo->sockfd);
 
@@ -163,6 +188,7 @@ void createClientServiceThread(void * params)
   }
 
   close(cs_sockinfo->sockfd);
+  pthread_join(timer_thread, NULL);
   pthread_exit(NULL);
 }
 
