@@ -149,15 +149,11 @@ void handleClientCommand(char* command, char* argument) {
 
 void createClientServiceThread(void * params)
 {
-  int timer_thread_tid;
-  pthread_t timer_thread;
+
   SockInfo cs_sockinfo = (SockInfo) params;
   int n;
   char buffer[256];
   ClientRequestPtr client_information;
-
-  timer_thread_tid = pthread_create(&timer_thread, NULL,
-    (void*(*)(void*))writeAccountsEveryTwentySeconds, NULL);
 
   printf("In cs thread: %i \n", cs_sockinfo->sockfd);
 
@@ -188,7 +184,6 @@ void createClientServiceThread(void * params)
   }
 
   close(cs_sockinfo->sockfd);
-  pthread_join(timer_thread, NULL);
   pthread_exit(NULL);
 }
 
@@ -252,6 +247,8 @@ void createSessionAcceptorThread(void* params)
 
 
 int main(int argc, char** argv){
+  int timer_thread_tid;
+  pthread_t timer_thread;
 
   ACCOUNTS = (AccountStoragePtr) malloc(sizeof(struct account_storage));
   //Session Acceptor Thread
@@ -263,6 +260,8 @@ int main(int argc, char** argv){
   test_obj->argc = argc;
   test_obj->argv = argv;
 
+  timer_thread_tid = pthread_create(&timer_thread, NULL,
+    (void*(*)(void*))writeAccountsEveryTwentySeconds, NULL);
   rc = pthread_create( &thread, NULL, (void*(*)(void*))createSessionAcceptorThread, (void* )test_obj);
 
   if( rc != 0 ){
@@ -270,6 +269,7 @@ int main(int argc, char** argv){
      return 0;
   }
 
+  pthread_join(timer_thread, NULL);
   pthread_join(thread, NULL);
   return 0;
 }
