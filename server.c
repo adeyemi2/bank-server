@@ -25,18 +25,21 @@
 /* Global Variables */
 AccountStoragePtr ACCOUNTS;
 
-char** tokenizeCommand(char* buffer)
+
+ClientRequestPtr getCommandFromBuffer(char* buffer)
 {
-  char* tmp_buffer = buffer;
+  char* tmp_buffer;
+  char* word;
   char* first_word;
   char* second_word;
   char** product;
-  const char delimiter[2] = " ";
   char* tmp_token;
-
   int i;
+  ClientRequestPtr structured_client_information;
+  const char delimiter[2] = " ";
 
-  product = malloc(sizeof(tmp_buffer));
+  tmp_buffer = buffer;
+  structured_client_information = malloc(sizeof(struct client_request));
 
   first_word = malloc(sizeof(tmp_buffer));
   second_word = malloc(sizeof(tmp_buffer));
@@ -58,44 +61,11 @@ char** tokenizeCommand(char* buffer)
     i += 1;
   }
 
-  product[0] = first_word;
-  product[1] = second_word;
+  //structured_client_information->command = malloc(sizeof(client_command[0]));
+  structured_client_information->command = first_word;
 
-  return product;
-}
-
-ClientRequestPtr getCommandFromBuffer(char* buffer)
-{
-  char* tmp_buffer = buffer;
-  char* word;
-  int nt_index;
-  int i;
-  char** client_command;
-  ClientRequestPtr structured_client_information;
-
-  client_command = malloc(sizeof(tmp_buffer)*2);
-  structured_client_information = malloc(sizeof(struct client_request));
-
-  nt_index = 0;
-  while(tmp_buffer[nt_index] != '\0'){
-    nt_index += 1;
-  }
-
-  i = 0;
-  word = malloc(sizeof(tmp_buffer));
-  while(i < nt_index - 1){
-    word[i] = tmp_buffer[i];
-    i += 1;
-  }
-
-  client_command = tokenizeCommand(tmp_buffer);
-
-  structured_client_information->command = malloc(sizeof(tmp_buffer));
-  structured_client_information->command = client_command[0];
-
-  structured_client_information->argument = malloc(sizeof(tmp_buffer));
-  structured_client_information->argument = client_command[1];
-
+  //structured_client_information->argument = malloc(sizeof(client_command[1]));
+  structured_client_information->argument = second_word;
 
   return structured_client_information;
 
@@ -146,10 +116,15 @@ void createClientServiceThread(void * params)
   n = read(cs_sockinfo->sockfd, buffer, 255);
   /* find out what the buffer holds */
   client_information = getCommandFromBuffer(buffer);
-  printf("%s %lu \t %s %lu \n", client_information->command,
+  printf("'%s' %lu, '%s' %lu \n", client_information->command,
     strlen(client_information->command),
     client_information->argument,
     strlen(client_information->argument));
+
+  // handle the args in client_information
+  
+  // then get rid of it
+  free(client_information);
 
   /* THIS IS WHERE WE GOTTA DO SHIT
   while(client_command != NULL) {
