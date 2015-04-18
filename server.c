@@ -25,15 +25,24 @@
 
 /* Global Variables */
 AccountStoragePtr ACCOUNTS;
+pthread_mutex_t lock;
 
 /* Thread that runs every twenty seconds,
 which prints the account information*/
+
+/* List
+
+1. Write mutex stuff to this
+
+*/
 void *writeAccountsEveryTwentySeconds(void *arg)
 {
   int account_index;
 
+
   while(1){
     sleep(SLEEP_TIME);
+    pthread_mutex_lock(&lock);
     if(ACCOUNTS->accounts[0] != NULL){
       for(account_index = 0; account_index <= MAX_ACCOUNTS; account_index++){
         printf("Name: %s \n", ACCOUNTS->accounts[account_index]->name);
@@ -42,6 +51,7 @@ void *writeAccountsEveryTwentySeconds(void *arg)
       }
     }
     printf("Sup Simple Simon \n");
+    pthread_mutex_unlock(&lock);
   }
   pthread_exit(NULL);
 }
@@ -260,8 +270,15 @@ int main(int argc, char** argv){
   test_obj->argc = argc;
   test_obj->argv = argv;
 
+  if( pthread_mutex_init(&lock, NULL) != 0 )
+  {
+    printf("\n mutex init failed \n");
+    return 1;
+  }
+
   timer_thread_tid = pthread_create(&timer_thread, NULL,
     (void*(*)(void*))writeAccountsEveryTwentySeconds, NULL);
+
   rc = pthread_create( &thread, NULL, (void*(*)(void*))createSessionAcceptorThread, (void* )test_obj);
 
   if( rc != 0 ){
