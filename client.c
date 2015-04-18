@@ -8,6 +8,8 @@
 #include <netdb.h>
 
 #define CONNECT_STATEMENT "Trying to connect again in 3 seconds..."
+#define QUIT_STATEMENT "quit\0"
+
 void error(const char *msg)
 {
     perror(msg);
@@ -60,7 +62,7 @@ int main(int argc, char *argv[])
     n = write(sockfd, buffer, strlen(buffer));
     if(n < 0)
        error("ERROR writing to socket");
-    while(strcmp(strtok(buffer, delimiter), delimiter) != 0 ) {
+    while(strcmp(strtok(buffer, delimiter), QUIT_STATEMENT) != 0 ) {
         n = read(sockfd,buffer,255);
         if (n < 0)
              error("ERROR reading from socket");
@@ -72,6 +74,7 @@ int main(int argc, char *argv[])
         n = write(sockfd, buffer, strlen(buffer));
         if(n < 0)
            error("ERROR writing to socket");
+        printf("HELLO : %s \n", strtok(buffer, delimiter));
     }
 
     close(sockfd);

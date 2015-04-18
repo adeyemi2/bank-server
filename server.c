@@ -21,11 +21,25 @@
 #define QUIT "quit\0"
 #define CREATE "create\0"
 
-#define SLEEP_TIME 5 /*make sure to change to 20 before submission */
+#define EMPTY_STRING ""
+#define SLEEP_TIME 20 /*make sure to change to 20 before submission */
 
 /* Global Variables */
 AccountStoragePtr ACCOUNTS;
 pthread_mutex_t lock;
+
+int handleClientCommand(int thread, ClientRequestPtr client_information)
+{
+  if(strcmp(client_information->argument, EMPTY_STRING) == 0){
+    if(strcmp(client_information->command, QUERY) == 0){
+      accountQuery(int thread);
+    }
+
+    if(strcmp(client_information->command, END) == 0){
+      account
+    }
+  }
+}
 
 /* Thread that runs every twenty seconds,
 which prints the account information*/
@@ -38,7 +52,6 @@ which prints the account information*/
 void *writeAccountsEveryTwentySeconds(void *arg)
 {
   int account_index;
-
 
   while(1){
     sleep(SLEEP_TIME);
@@ -92,37 +105,12 @@ ClientRequestPtr getCommandFromBuffer(char* buffer)
 
   //structured_client_information->command = malloc(sizeof(client_command[0]));
   structured_client_information->command = first_word;
-  
+
   //structured_client_information->argument = malloc(sizeof(client_command[1]));
   structured_client_information->argument = second_word;
 
   return structured_client_information;
 
-}
-
-void handleClientCommand(char* command, char* argument) {
-
-  if( argument == NULL) {
-    if( strcmp(command, "query") == 0) {
-
-    }else if( strcmp(command, "end") == 0) {
-
-    }else if( strcmp(command, "quit") == 0) {
-
-    }
-  }else{
-
-    if( strcmp(command, "create") == 0) {
-
-
-    }else if( strcmp(command, "serve") == 0) {
-
-    } else if( strcmp(command, "deposit") == 0) {
-
-    } else if( strcmp(command, "withdraw") == 0) {
-
-    }
-  }
 }
 
 void createClientServiceThread(void * params)
@@ -153,7 +141,7 @@ void createClientServiceThread(void * params)
     strlen(client_information->argument));
 
   // handle the args in client_information
-  
+
   // then get rid of it
   free(client_information);
 
