@@ -7,6 +7,9 @@ client: client.c
 server: server.c
 	$(COMPILER) $(CCFLAGS) server.c -o server
 
+acctest: account_test.c
+	$(COMPILER) $(CCFLAGS) account_test.c -o acc_test
+
 all: client server
 
 clean:
