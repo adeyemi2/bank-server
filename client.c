@@ -7,6 +7,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 
+#define CONNECT_STATEMENT "Trying to connect again in 3 seconds..."
 void error(const char *msg)
 {
     perror(msg);
@@ -18,8 +19,10 @@ int main(int argc, char *argv[])
     int sockfd, portno, n;
     struct sockaddr_in serv_addr;
     struct hostent *server;
-
+    const char delimiter[2] = "\0";
     char buffer[256];
+
+
     if (argc < 3) {
        fprintf(stderr,"usage %s hostname port\n", argv[0]);
        exit(0);
@@ -51,12 +54,25 @@ int main(int argc, char *argv[])
          error("ERROR reading from socket");
     printf("%s\n",buffer);
 
-
+    printf(">>Enter the string: ");
     bzero(buffer, 256);
     fgets(buffer, 255, stdin);
     n = write(sockfd, buffer, strlen(buffer));
     if(n < 0)
        error("ERROR writing to socket");
+    while(strcmp(strtok(buffer, delimiter), delimiter) != 0 ) {
+        n = read(sockfd,buffer,255);
+        if (n < 0)
+             error("ERROR reading from socket");
+        printf("%s\n",buffer);
+
+        printf(">>Enter the string: ");
+        bzero(buffer, 256);
+        fgets(buffer, 255, stdin);
+        n = write(sockfd, buffer, strlen(buffer));
+        if(n < 0)
+           error("ERROR writing to socket");
+    }
 
     close(sockfd);
     return 0;

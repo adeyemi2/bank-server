@@ -164,8 +164,10 @@ void createClientServiceThread(void * params)
   int n;
   char buffer[256];
   ClientRequestPtr client_information;
+  const char delimiter[2] = "\0";
 
-  printf("In cs thread: %i \n", cs_sockinfo->sockfd);
+  printf("In client service socket: %i \n", cs_sockinfo->sockfd);
+
 
   n = write(cs_sockinfo->sockfd, "Connected to server. Ready for commands", 255);
   if( n < 0) {
@@ -193,6 +195,35 @@ void createClientServiceThread(void * params)
     error("ERROR reading from socket \n");
   }
 
+  while( strcmp( strtok(buffer, delimiter), delimiter) != 0){
+    n = write(cs_sockinfo->sockfd, "Connected to server. Ready for commands", 255);
+    if( n < 0) {
+      error("ERROR on writing to socket");
+    }
+
+    bzero(buffer, 256);
+
+    n = read(cs_sockinfo->sockfd, buffer, 255);
+    /* find out what the buffer holds */
+    client_information = getCommandFromBuffer(buffer);
+    printf("%s %lu \t %s %lu \n", client_information->command,
+      strlen(client_information->command),
+      client_information->argument,
+      strlen(client_information->argument));
+
+    /* THIS IS WHERE WE GOTTA DO SHIT
+    while(client_command != NULL) {
+      handleClientCommand(client_command, client_command_argument);
+
+    }
+    */
+
+    if( n < 0){
+      error("ERROR reading from socket \n");
+    }
+  }
+
+  printf("Exiting socket %i\n", cs_sockinfo->sockfd);
   close(cs_sockinfo->sockfd);
   pthread_exit(NULL);
 }
