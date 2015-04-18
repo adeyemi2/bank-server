@@ -28,46 +28,46 @@
 AccountStoragePtr ACCOUNTS;
 pthread_mutex_t lock;
 
-int handleClientCommand(int thread, ClientRequestPtr client_information)
-{
-  float balance;
-  if(strcmp(client_information->argument, EMPTY_STRING) == 0){
-    if(strcmp(client_information->command, QUERY) == 0){
-      balance = accountQuery(int thread);
-      return balance;
-    }
+// int handleClientCommand(int thread, ClientRequestPtr client_information)
+// {
+//   float balance;
+//   if(strcmp(client_information->argument, EMPTY_STRING) == 0){
+//     if(strcmp(client_information->command, QUERY) == 0){
+//       balance = accountQuery(int thread);
+//       return balance;
+//     }
 
-    if(strcmp(client_information->command, END) == 0){
-      accountEnd(int thread);
-      return 1;
-    }
+//     if(strcmp(client_information->command, END) == 0){
+//       accountEnd(int thread);
+//       return 1;
+//     }
 
-    if(strcmp(client_information->command, QUIT)) == 0){
-      accountEnd(int thread);
-      return 1;
-    }
-  } else {
-    if(strcmp(client_information->command, WITHDRAW) == 0){
-      accountWithdraw(int thread, client_information->argument);
-      return 1;
-    }
+//     if(strcmp(client_information->command, QUIT)) == 0){
+//       accountEnd(int thread);
+//       return 1;
+//     }
+//   } else {
+//     if(strcmp(client_information->command, WITHDRAW) == 0){
+//       accountWithdraw(int thread, client_information->argument);
+//       return 1;
+//     }
 
-    if(strcmp(client_information->command, DEPOSIT) == 0){
-      accountDeposit(int thread, client_information->argument);
-      return 1;
-    }
+//     if(strcmp(client_information->command, DEPOSIT) == 0){
+//       accountDeposit(int thread, client_information->argument);
+//       return 1;
+//     }
 
-    if(strcmp(client_information->command, CREATE) == 0){
-      accountCreate(int thread, client_information->argument);
-      return 1;
-    }
-    if(strcmp(client_information->command, SERVE) == 0){
-      accountServe(int thread, client_information->argument);
-      return 1;
-    }
-  }
-  return 0;
-}
+//     if(strcmp(client_information->command, CREATE) == 0){
+//       accountCreate(int thread, client_information->argument);
+//       return 1;
+//     }
+//     if(strcmp(client_information->command, SERVE) == 0){
+//       accountServe(int thread, client_information->argument);
+//       return 1;
+//     }
+//   }
+//   return 0;
+// }
 
 /* Thread that runs every twenty seconds,
 which prints the account information*/
@@ -152,64 +152,23 @@ void createClientServiceThread(void * params)
 
   printf("In client service socket: %i \n", cs_sockinfo->sockfd);
 
-
-  n = write(cs_sockinfo->sockfd, "Connected to server. Ready for commands", 255);
+  n = write(cs_sockinfo->sockfd, "Connected to server. Ready for commands\n", 255);
   if( n < 0) {
     error("ERROR on writing to socket");
   }
 
   bzero(buffer, 256);
 
-  n = read(cs_sockinfo->sockfd, buffer, 255);
-  /* find out what the buffer holds */
-  client_information = getCommandFromBuffer(buffer);
-  printf("'%s' %lu, '%s' %lu \n", client_information->command,
-    strlen(client_information->command),
-    client_information->argument,
-    strlen(client_information->argument));
-
-  // handle the args in client_information
-
-  // then get rid of it
-  free(client_information);
-
-  /* THIS IS WHERE WE GOTTA DO SHIT
-  while(client_command != NULL) {
-    handleClientCommand(client_command, client_command_argument);
-
-  }
-  */
-
-  if( n < 0){
-    error("ERROR reading from socket \n");
-  }
-
-  while( strcmp( strtok(buffer, delimiter), delimiter) != 0){
-    n = write(cs_sockinfo->sockfd, "Connected to server. Ready for commands", 255);
-    if( n < 0) {
-      error("ERROR on writing to socket");
-    }
-
-    bzero(buffer, 256);
-
-    n = read(cs_sockinfo->sockfd, buffer, 255);
-    /* find out what the buffer holds */
+  // Read commands from socket
+  while( read(cs_sockinfo->sockfd, buffer, 255) > 0){
     client_information = getCommandFromBuffer(buffer);
-    printf("%s %lu \t %s %lu \n", client_information->command,
-      strlen(client_information->command),
-      client_information->argument,
-      strlen(client_information->argument));
-
-    /* THIS IS WHERE WE GOTTA DO SHIT
-    while(client_command != NULL) {
-      handleClientCommand(client_command, client_command_argument);
-
-    }
-    */
-
-    if( n < 0){
-      error("ERROR reading from socket \n");
-    }
+    printf("%s, %s \n", client_information->command,client_information->argument);
+    //write(cs_sockinfo->sockfd, client_information->argument, strlen(client_information->argument));
+    write(cs_sockinfo->sockfd, client_information->command, strlen(client_information->command));
+    
+    // send command to handler
+    // handleClientCommand(cs_sockinfo->sockfd, client_information);
+    bzero(buffer, 256);
   }
 
   printf("Exiting socket %i\n", cs_sockinfo->sockfd);

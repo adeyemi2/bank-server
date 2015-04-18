@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
     struct sockaddr_in serv_addr;
     struct hostent *server;
     const char delimiter[2] = "\0";
-    char buffer[256];
+    char server_buffer[256], client_buffer[256];
 
 
     if (argc < 3) {
@@ -50,33 +50,27 @@ int main(int argc, char *argv[])
 
     if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0)
         error("ERROR connecting");
+    else
+      read(sockfd,server_buffer,255);
 
-    n = read(sockfd,buffer,255);
-    if (n < 0)
-         error("ERROR reading from socket");
-    printf("%s\n",buffer);
-
-    printf(">>Enter the string: ");
-    bzero(buffer, 256);
-    fgets(buffer, 255, stdin);
-    n = write(sockfd, buffer, strlen(buffer));
-    if(n < 0)
-       error("ERROR writing to socket");
-    while(strcmp(strtok(buffer, delimiter), QUIT_STATEMENT) != 0 ) {
-        n = read(sockfd,buffer,255);
-        if (n < 0)
-             error("ERROR reading from socket");
-        printf("%s\n",buffer);
-
-        printf(">>Enter the string: ");
-        bzero(buffer, 256);
-        fgets(buffer, 255, stdin);
-        n = write(sockfd, buffer, strlen(buffer));
+    printf("%s >>", server_buffer);
+    bzero(server_buffer,255);
+    while( fgets(client_buffer, 255, stdin) != NULL ) {
+        // send input to server
+        n = send(sockfd, client_buffer, strlen(client_buffer), MSG_OOB);
         if(n < 0)
-           error("ERROR writing to socket");
-        printf("HELLO : %s \n", strtok(buffer, delimiter));
-    }
+          error("ERROR writing to socket");
+        
+        // wait for response
+        n = read(sockfd,server_buffer,255);
+        if (n < 0)
+          error("ERROR reading from socket");
 
+        printf("%s \n", server_buffer);
+        bzero(server_buffer,255);
+        printf(">> ");
+    }
+    
     close(sockfd);
     return 0;
 }
