@@ -8,6 +8,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+
 /* User created libraries */
 #include "accounts.h"
 #include "server.h"
@@ -20,19 +21,47 @@
 #define QUIT "quit\0"
 #define CREATE "create\0"
 
-#define SPACE_DELIMITER ' '
+#define SLEEP_TIME 5 /*make sure to change to 20 before submission */
 
 /* Global Variables */
 AccountStoragePtr ACCOUNTS;
+pthread_mutex_t lock;
+
+/* Thread that runs every twenty seconds,
+which prints the account information*/
+
+/* List
+
+1. Write mutex stuff to this
+
+*/
+void *writeAccountsEveryTwentySeconds(void *arg)
+{
+  int account_index;
+
+
+  while(1){
+    sleep(SLEEP_TIME);
+    pthread_mutex_lock(&lock);
+    if(ACCOUNTS->accounts[0] != NULL){
+      for(account_index = 0; account_index <= MAX_ACCOUNTS; account_index++){
+        printf("Name: %s \n", ACCOUNTS->accounts[account_index]->name);
+        printf("Balance: %f \n", ACCOUNTS->accounts[account_index]->balance);
+        printf("IN SESSION: %i \n\n\n", ACCOUNTS->accounts[account_index]->in_session);
+      }
+    }
+    printf("Sup Simple Simon \n");
+    pthread_mutex_unlock(&lock);
+  }
+  pthread_exit(NULL);
+}
 
 
 ClientRequestPtr getCommandFromBuffer(char* buffer)
 {
   char* tmp_buffer;
-  char* word;
   char* first_word;
   char* second_word;
-  char** product;
   char* tmp_token;
   int i;
   ClientRequestPtr structured_client_information;
@@ -63,7 +92,7 @@ ClientRequestPtr getCommandFromBuffer(char* buffer)
 
   //structured_client_information->command = malloc(sizeof(client_command[0]));
   structured_client_information->command = first_word;
-
+  
   //structured_client_information->argument = malloc(sizeof(client_command[1]));
   structured_client_information->argument = second_word;
 
@@ -201,6 +230,8 @@ void createSessionAcceptorThread(void* params)
 
 
 int main(int argc, char** argv){
+  int timer_thread_tid;
+  pthread_t timer_thread;
 
   ACCOUNTS = (AccountStoragePtr) malloc(sizeof(struct account_storage));
   //Session Acceptor Thread
@@ -212,6 +243,15 @@ int main(int argc, char** argv){
   test_obj->argc = argc;
   test_obj->argv = argv;
 
+  if( pthread_mutex_init(&lock, NULL) != 0 )
+  {
+    printf("\n mutex init failed \n");
+    return 1;
+  }
+
+  timer_thread_tid = pthread_create(&timer_thread, NULL,
+    (void*(*)(void*))writeAccountsEveryTwentySeconds, NULL);
+
   rc = pthread_create( &thread, NULL, (void*(*)(void*))createSessionAcceptorThread, (void* )test_obj);
 
   if( rc != 0 ){
@@ -219,6 +259,7 @@ int main(int argc, char** argv){
      return 0;
   }
 
+  pthread_join(timer_thread, NULL);
   pthread_join(thread, NULL);
   return 0;
 }
