@@ -22,7 +22,7 @@
 #define CREATE "create\0"
 
 #define EMPTY_STRING ""
-#define SLEEP_TIME 20 /*make sure to change to 20 before submission */
+#define SLEEP_TIME 6 /*make sure to change to 20 before submission */
 
 /* Global Variables */
 AccountStoragePtr ACCOUNTS;
@@ -122,7 +122,7 @@ int handleClientCommand(int thread, ClientRequestPtr client_information)
       
     }
     if(strcmp(client_information->command, SERVE) == 0){
-      // accountServe(int thread, client_information->argument);
+      //accountServe(thread, client_information->argument);
       return 1;
     }
   }
@@ -145,10 +145,13 @@ void *writeAccountsEveryTwentySeconds(void *arg)
     sleep(SLEEP_TIME);
     pthread_mutex_lock(&lock);
     if(ACCOUNTS->accounts[0] != NULL){
+      printf("Accounts: [\n last_index: %d", ACCOUNTS->last_account_index);
       for(account_index = 0; account_index <= MAX_ACCOUNTS; account_index++){
         accountPrint(ACCOUNTS->accounts[account_index]);
       }
+      printf("];\n");
     }
+
     // for(socket_index = 0; socket_index <= MAX_ACCOUNTS; socket_index++){
     //     printf("%i \n", SOCKETS[socket_index]);
     // }
@@ -332,6 +335,7 @@ int main(int argc, char** argv){
 
   ACCOUNTS = (AccountStoragePtr) malloc(sizeof(struct account_storage));
   SOCKETS = malloc(sizeof(int) * SOMAXCONN);
+  ACCOUNTS->last_account_index = 0;
   //Session Acceptor Thread
   pthread_t thread;
   int rc, i;

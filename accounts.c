@@ -45,17 +45,29 @@ void accountEndConnection(int thread, AccountStoragePtr all_accounts) {
 }
 
 AccountPtr accountCreate(char* name, AccountStoragePtr all_accounts){
-	int i;
+	int i, last_index; 
+  AccountPtr acc;
 
   //check account name is valid
 	if(name == NULL || strcmp(name, "") == 0){
 		printf("NULL name passed to AccountCreate");
 		return NULL;
 	}
+
+  if(all_accounts == NULL ) {
+    printf("Account registry is NULL");
+    return NULL;
+  }
+  
+  if( all_accounts->last_account_index == MAX_ACCOUNTS -1) {
+    printf("Account registry is full. Cannot add account");
+    return NULL;
+  }
   // check if name exists
   i = 0;
-	while( i < MAX_ACCOUNTS) {
-    if( all_accounts->accounts[i] == NULL ) {
+  
+	while( i <= all_accounts->last_account_index) {
+    if( all_accounts->accounts[i] == NULL) {
       break;
     }
     if( strcmp(all_accounts->accounts[i]->name, name) == 0) {
@@ -65,16 +77,21 @@ AccountPtr accountCreate(char* name, AccountStoragePtr all_accounts){
     i++;
   }
 
-	AccountPtr acc;
 	acc = (AccountPtr) malloc( sizeof( struct account));
 	if(acc == NULL){
 		printf("Malloc failed in AccountCreate");
 		return NULL;
 	}
-	acc->name = name;
+  if (all_accounts->accounts[all_accounts->last_account_index] != NULL) {
+    all_accounts->last_account_index++; //
+  }
+  acc->name = (char*)malloc(strlen(name));
+  strcpy(acc->name, name);
 	acc->balance = 0.0;
 	acc->in_session = 0;
-	//acc->index = index;
+	acc->index = all_accounts->last_account_index;
+  // add the account to the list of accounts
+  all_accounts->accounts[all_accounts->last_account_index] = acc;
 	return acc;
 
 }
@@ -130,16 +147,11 @@ int accountWithdraw(float amount, AccountPtr account){
 
 void accountPrint(AccountPtr account ) {
   if(account == NULL){
-    printf("No details for NULL account to print");
     return;
   }
-  else{
-    char * active = "True";
-    if (account->in_session == 0){
-      active = "False";
-    }
-    printf("<Account: %s, Balance: %f, Currently Active: %s >\n" , account->name, account->balance, active);
-  }
+  
+  printf("\t<Account: %s, Balance: %f, Currently Active: %s >\n" , account->name, account->balance, (account->in_session == 1 ? "True" : "False"));
+
 }
 
 void printAccounts(AccountStoragePtr bank){
