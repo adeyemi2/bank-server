@@ -28,10 +28,10 @@ float accountGetBalance(AccountPtr account);
 
 //-account deposit
 //deposit should change account balance and return 0 for failure 1 for success
-int accountDeposit(float amount, AccountPtr account);
+int accountDeposit(int thread, float amount, AccountStoragePtr all_accounts);
 
 //withdraw should change account balance and return 0 for failure 1 for success
-int accountWithdraw(float amount, AccountPtr account);
+int accountWithdraw(int thread, float amount, AccountStoragePtr all_accounts);
 
 // print account details
 void accountPrint(AccountPtr account);

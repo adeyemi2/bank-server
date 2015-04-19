@@ -90,7 +90,7 @@ int handleClientCommand(int thread, ClientRequestPtr client_information)
   if(strcmp(client_information->argument, EMPTY_STRING) == 0){
     if(strcmp(client_information->command, QUERY) == 0){
       //balance = accountGetBalance(thread);
-      return 1;
+      //return balance
     }
 
     if(strcmp(client_information->command, END) == 0){
@@ -104,12 +104,12 @@ int handleClientCommand(int thread, ClientRequestPtr client_information)
     }
   } else {
     if(strcmp(client_information->command, WITHDRAW) == 0){
-      //accountWithdraw(int thread, client_information->argument);
+      accountWithdraw(thread, atof(client_information->argument), ACCOUNTS);
       return 1;
     }
 
     if(strcmp(client_information->command, DEPOSIT) == 0){
-      // accountDeposit(int thread, client_information->argument);
+      accountDeposit(thread, atof(client_information->argument), ACCOUNTS);
       return 1;
     }
 
@@ -119,10 +119,10 @@ int handleClientCommand(int thread, ClientRequestPtr client_information)
         return 1;
       }
       return 0;
-      
+
     }
     if(strcmp(client_information->command, SERVE) == 0){
-      //accountServe(thread, client_information->argument);
+      accountServe(thread, client_information->argument, ACCOUNTS);
       return 1;
     }
   }
@@ -139,7 +139,7 @@ which prints the account information*/
 */
 void *writeAccountsEveryTwentySeconds(void *arg)
 {
-  int account_index, socket_index;
+  int account_index;
 
   while(1){
     sleep(SLEEP_TIME);
@@ -243,13 +243,13 @@ void createClientServiceThread(void * params)
   while( read(cs_sockinfo->sockfd, buffer, 255) > 0){
     client_information = getCommandFromBuffer(buffer);
     printf("Command: %s, %s \n", client_information->command,client_information->argument);
-    
+
     if(strcmp(client_information->command, "quit") == 0) {
       break;
     }
     // send command to handler
     handleClientCommand(cs_sockinfo->sockfd, client_information);
-    
+
     bzero(buffer, 256);
   }
   write(cs_sockinfo->sockfd, "quit", 4);

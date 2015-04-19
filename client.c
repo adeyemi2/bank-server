@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
     int sockfd, portno, n;
     struct sockaddr_in serv_addr;
     struct hostent *server;
-    char server_buffer[256], client_buffer[256];
+    char client_buffer[256];
     pthread_t listener_thread;
 
     if (argc < 3) {
@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
          (char *)&serv_addr.sin_addr.s_addr,
          server->h_length);
     serv_addr.sin_port = htons(portno);
-    
+
     if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0)
         error("ERROR connecting");
     // create a thread for listening to the server
@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
 
     printf(">>");
     while( fgets(client_buffer, 255, stdin) != NULL ) {
-    
+
         // send input to server
         n = send(sockfd, client_buffer, strlen(client_buffer), MSG_OOB);
         if(n < 0)

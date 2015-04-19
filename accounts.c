@@ -14,6 +14,52 @@ AccountPtr accountGet(char *account_name, AccountStoragePtr collection) {
   return NULL;
 }
 
+//return 1 for success, 0 for failure
+int accountWithdraw(int thread, float amount, AccountStoragePtr all_accounts){
+	/* Figure out the account from the thread */
+	int thread_index;
+	thread_index = 0;
+	while(thread_index < MAX_ACCOUNTS ){
+		if(all_accounts->threads[thread_index] == thread){
+			break;
+		}
+		thread_index++;
+	}
+	if(thread_index == MAX_ACCOUNTS){
+		printf("Thread could not be found \n");
+		return 0;
+	}
+
+	if(all_accounts->accounts[thread_index]->balance - amount < (float) 0){
+		printf("Balance would be negative. \n");
+		return 0;
+	}
+	all_accounts->accounts[thread_index]->balance -= amount;
+	return 1;
+
+}
+
+//return 1 for success, 0 for failure
+int accountDeposit(int thread, float amount, AccountStoragePtr all_accounts){
+		/* Figure out the account from the thread */
+		int thread_index;
+		thread_index = 0;
+		while( thread_index < MAX_ACCOUNTS ){
+			if( all_accounts->threads[thread_index] == thread){
+				break;
+			}
+			thread_index++;
+		}
+		if(thread_index == MAX_ACCOUNTS){
+			printf("Thread could not be found. \n");
+			return 0;
+		}
+		/* Thread index is the same as account index */
+		all_accounts->accounts[thread_index]->balance += amount;
+		return 1;
+}
+
+
 void accountServe(int thread, char* account_name, AccountStoragePtr all_accounts){
 	/* Find account in accounts that matches name of account name */
 	int tmp_account_index;
@@ -45,7 +91,7 @@ void accountEndConnection(int thread, AccountStoragePtr all_accounts) {
 }
 
 AccountPtr accountCreate(char* name, AccountStoragePtr all_accounts){
-	int i, last_index; 
+	int i;
   AccountPtr acc;
 
   //check account name is valid
@@ -58,14 +104,14 @@ AccountPtr accountCreate(char* name, AccountStoragePtr all_accounts){
     printf("Account registry is NULL");
     return NULL;
   }
-  
+
   if( all_accounts->last_account_index == MAX_ACCOUNTS -1) {
     printf("Account registry is full. Cannot add account");
     return NULL;
   }
   // check if name exists
   i = 0;
-  
+
 	while( i <= all_accounts->last_account_index) {
     if( all_accounts->accounts[i] == NULL) {
       break;
@@ -104,52 +150,13 @@ float accountGetBalance(AccountPtr account){
 	}
 	return account->balance;
 }
-//return 1 for success, 0 for failure
-int accountDeposit(float amount, AccountPtr account){
-	if(account == NULL){
-		printf("Invalid account");
-		return 0;
-	}
-	if(amount < 0){
-		printf("Invalid amount, use withdraw to withdraw");
-		return 0;
-	}
 
-	float deposit_amount, previous_balance, new_balance;
-	deposit_amount = (float)amount;
-	previous_balance = (float)account->balance;
-	new_balance = deposit_amount + previous_balance;
-	account->balance = new_balance;
-	return 1;
-}
-//return 1 for success, 0 for failure
-int accountWithdraw(float amount, AccountPtr account){
-	if(account == NULL){
-		printf("Invalid account");
-		return 0;
-	}
-	if(amount < 0){
-		printf("Invalid amount, withdraw positive ammounts");
-		return 0;
-	}
-
-	if(amount > account->balance){
-		printf("Can't overdraft at this bank, sorry");
-		return 0;
-	}
-	float withdraw_amount, previous_balance, new_balance;
-	withdraw_amount = (float) amount;
-	previous_balance = (float) account->balance;
-	new_balance = previous_balance - withdraw_amount;
-	account->balance = new_balance;
-	return 1;
-}
 
 void accountPrint(AccountPtr account ) {
   if(account == NULL){
     return;
   }
-  
+
   printf("\t<Account: %s, Balance: %f, Currently Active: %s >\n" , account->name, account->balance, (account->in_session == 1 ? "True" : "False"));
 
 }
@@ -195,9 +202,8 @@ AccountPtr getThreadAccount(int thread, AccountStoragePtr all_accounts) {
   AccountPtr acct;
   int i;
   i = 0;
-
   acct = all_accounts->accounts[i];
-  for(i; i< MAX_ACCOUNTS; i++) {
+  for(;i< MAX_ACCOUNTS; i++) {
     if( all_accounts->threads[i] == thread)
       acct = all_accounts->accounts[i];
       break;
