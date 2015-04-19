@@ -16,12 +16,21 @@ void error(const char *msg)
     exit(0);
 }
 
+void signal_handler(int signo)
+{
+    if(signo == SIGINT){
+        printf("Signal Interrupt handled. Exiting \n");
+        exit(1);
+    }
+}
+
 int main(int argc, char *argv[])
 {
+    signal(SIGINT, signal_handler);
+
     int sockfd, portno, n;
     struct sockaddr_in serv_addr;
     struct hostent *server;
-    const char delimiter[2] = "\0";
     char server_buffer[256], client_buffer[256];
 
 
@@ -46,8 +55,6 @@ int main(int argc, char *argv[])
          (char *)&serv_addr.sin_addr.s_addr,
          server->h_length);
     serv_addr.sin_port = htons(portno);
-
-
     if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0)
         error("ERROR connecting");
     else
@@ -60,9 +67,16 @@ int main(int argc, char *argv[])
         n = send(sockfd, client_buffer, strlen(client_buffer), MSG_OOB);
         if(n < 0)
           error("ERROR writing to socket");
-        
+
         // wait for response
         n = read(sockfd,server_buffer,255);
+
+        printf("%i \n", strcmp("quit", server_buffer) == 0);
+        if(strcmp("quit", server_buffer) == 0){
+            printf("SIGINT: %i \n", server_buffer[0]);
+            signal_handler(SIGINT);
+        }
+
         if (n < 0)
           error("ERROR reading from socket");
 
@@ -70,7 +84,7 @@ int main(int argc, char *argv[])
         bzero(server_buffer,255);
         printf(">> ");
     }
-    
+
     close(sockfd);
     return 0;
 }
