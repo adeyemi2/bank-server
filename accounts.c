@@ -14,6 +14,25 @@ AccountPtr accountGet(char *account_name, AccountStoragePtr collection) {
   return NULL;
 }
 
+
+//return balance on success, -1 on failure
+float accountGetBalance(int thread, AccountStoragePtr all_accounts){
+	int thread_index;
+	thread_index = 0;
+	while(thread_index < MAX_ACCOUNTS ){
+		if(all_accounts->threads[thread_index] == thread){
+			break;
+		}
+		thread_index++;
+	}
+	if(thread_index == MAX_ACCOUNTS){
+		printf("Thread could not be found \n");
+		return -1;
+	}
+	return all_accounts->accounts[thread_index]->balance;
+}
+
+
 //return 1 for success, 0 for failure
 int accountWithdraw(int thread, float amount, AccountStoragePtr all_accounts){
 	/* Figure out the account from the thread */
@@ -140,15 +159,6 @@ AccountPtr accountCreate(char* name, AccountStoragePtr all_accounts){
   all_accounts->accounts[all_accounts->last_account_index] = acc;
 	return acc;
 
-}
-
-//return balance on success, -1 on failure
-float accountGetBalance(AccountPtr account){
-	if(account == NULL){
-		printf("Invalid account");
-		return -1.0;
-	}
-	return account->balance;
 }
 
 

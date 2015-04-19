@@ -81,52 +81,69 @@ void signal_handler(int signo)
 }
 
 
-int handleClientCommand(int thread, ClientRequestPtr client_information)
+ClientResponsePtr handleClientCommand(int thread, ClientRequestPtr client_information)
 {
   float balance;
   AccountPtr account;
 
+  ClientResponsePtr return_value;
+  return_value = malloc(sizeof(struct client_response));
+
   account = getThreadAccount(thread, ACCOUNTS);
   if(strcmp(client_information->argument, EMPTY_STRING) == 0){
     if(strcmp(client_information->command, QUERY) == 0){
-      //balance = accountGetBalance(thread);
-      //return balance
+      balance = accountGetBalance(thread,ACCOUNTS);
+      return_value->balance = balance;
+      return_value->is_query = 1;
+      return return_value;
     }
 
     if(strcmp(client_information->command, END) == 0){
       //accountEnd(int thread);
-      return 1;
+      //return 1;
     }
 
     if(strcmp(client_information->command, QUIT) == 0){
       //accountEnd(int thread);
-      return 1;
+      //return 1;
     }
   } else {
     if(strcmp(client_information->command, WITHDRAW) == 0){
       accountWithdraw(thread, atof(client_information->argument), ACCOUNTS);
-      return 1;
+      return_value->balance = 1;
+      return_value->is_query = 0;
+      return return_value;
     }
 
     if(strcmp(client_information->command, DEPOSIT) == 0){
       accountDeposit(thread, atof(client_information->argument), ACCOUNTS);
-      return 1;
+      return_value->balance = 1;
+      return_value->is_query = 0;
+      return return_value;
     }
 
     if(strcmp(client_information->command, CREATE) == 0){
       account = accountCreate(client_information->argument, ACCOUNTS);
       if( account != NULL ) {
-        return 1;
+        return_value->balance = 1;
+        return_value->is_query = 0;
+        return return_value;
       }
-      return 0;
+      return_value->balance = 0;
+      return_value->is_query = 0;
+      return return_value;
 
     }
     if(strcmp(client_information->command, SERVE) == 0){
       accountServe(thread, client_information->argument, ACCOUNTS);
-      return 1;
+      return_value->balance = 1;
+      return_value->is_query = 0;
+      return return_value;
     }
   }
-  return 0;
+  return_value->balance = 0;
+  return_value->is_query = 0;
+  return return_value;
 }
 
 /* Thread that runs every twenty seconds,
@@ -228,7 +245,9 @@ void createClientServiceThread(void * params)
   int n;
   char buffer[256];
   int kill_socket_in_array_flag;
+  char balance[100];
   ClientRequestPtr client_information;
+  ClientResponsePtr handle_client_response;
 
   printf("In client service socket: %i \n", cs_sockinfo->sockfd);
 
@@ -248,8 +267,11 @@ void createClientServiceThread(void * params)
       break;
     }
     // send command to handler
-    handleClientCommand(cs_sockinfo->sockfd, client_information);
-
+    handle_client_response = handleClientCommand(cs_sockinfo->sockfd, client_information);
+    if(handle_client_response->is_query == 1){
+      n = sprintf(balance, "Account Balance: %f \n", handle_client_response->balance);
+      write(cs_sockinfo->sockfd, balance, 100);
+    }
     bzero(buffer, 256);
   }
   write(cs_sockinfo->sockfd, "quit", 4);

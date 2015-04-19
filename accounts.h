@@ -24,7 +24,7 @@ AccountPtr accountGet(char *accountname, AccountStoragePtr collection);
 AccountPtr accountCreate(char* name, AccountStoragePtr all_accounts);
 
 //-account query
-float accountGetBalance(AccountPtr account);
+float accountGetBalance(int thread, AccountStoragePtr all_accounts);
 
 //-account deposit
 //deposit should change account balance and return 0 for failure 1 for success
