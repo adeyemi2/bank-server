@@ -32,10 +32,16 @@ void server_listener(void * params)
 
   socket = (int) params;
   while( read(socket, buffer, 255) > 0){
+    
+    // handle the quit from the server
     if(strcmp("quit", buffer) == 0){
       signal_handler(SIGINT);
     };
-    printf("%s\n", buffer);
+    // output the response from the server
+    if( strlen(buffer) > 0) {
+      printf("%s\n", buffer);
+    }
+    printf(">>");
     bzero(buffer,255);
   }
 

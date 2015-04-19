@@ -83,14 +83,18 @@ void accountServe(int thread, char* account_name, AccountStoragePtr all_accounts
 	/* Find account in accounts that matches name of account name */
 	int tmp_account_index;
 	tmp_account_index = 0;
-	do{
-		if(strcmp(all_accounts->accounts[tmp_account_index]->name, account_name) == 0)
-			break;
-    tmp_account_index += 1;
-	} while( strcmp(all_accounts->accounts[tmp_account_index]->name, account_name) != 0);
-
-	all_accounts->accounts[tmp_account_index]->in_session = 1;
-	all_accounts->threads[tmp_account_index] = thread;
+  // end any account connection that already exists on the thread
+  accountEndConnection(thread, all_accounts);
+  while(tmp_account_index < MAX_ACCOUNTS ) {
+		if( all_accounts->accounts[tmp_account_index] != NULL &&
+      strcmp(all_accounts->accounts[tmp_account_index]->name, account_name) == 0) {
+        all_accounts->accounts[tmp_account_index]->in_session = 1;
+        all_accounts->threads[tmp_account_index] = thread;
+        return;
+    }
+    tmp_account_index++;
+	}
+  printf("Account '%s' not found\n", account_name);
 }
 
 void accountEndConnection(int thread, AccountStoragePtr all_accounts) {
@@ -98,15 +102,13 @@ void accountEndConnection(int thread, AccountStoragePtr all_accounts) {
   thread_index = 0;
   /* find the index that corresponds to the account and socket */
   while(thread_index < MAX_ACCOUNTS) {
-    if( all_accounts->threads[thread_index] != 0 && all_accounts->threads[thread_index] == thread) {
-      break;
+    if( all_accounts->threads[thread_index] == thread) {
+      all_accounts->accounts[thread_index]->in_session = 0;
+      all_accounts->threads[thread_index] = 0;
+      return;
     }
     thread_index++;
   }
-
-  all_accounts->accounts[thread_index]->in_session = 0;
-  all_accounts->threads[thread_index] = 0;
-
 }
 
 AccountPtr accountCreate(char* name, AccountStoragePtr all_accounts){

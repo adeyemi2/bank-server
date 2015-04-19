@@ -34,17 +34,37 @@ int killSocket(int sockfd)
 {
   int socket_index;
   socket_index = 0;
-  while(SOCKETS[socket_index] != sockfd){
-    socket_index += 1;
+  while( socket_index < MAX_ACCOUNTS) {
+    if( SOCKETS[socket_index] == sockfd) {
+      SOCKETS[socket_index] = 0;
+      return 1;
+    }
+    socket_index++;
   }
-  if(SOCKETS[socket_index] != sockfd &&
-    socket_index == sizeof(int)*SOMAXCONN){
-    return 0;
-  }
-  SOCKETS[socket_index] = 0;
-  return 1;
+  return 0;
 }
 
+int isThreadInSession(int thread, AccountStoragePtr all_accounts)
+{
+  int i;
+  i = 0;
+  // find the thread index
+  while( i < MAX_ACCOUNTS ) {
+    if( all_accounts->threads[i] == thread) {
+      break;
+    }
+    i++;
+  }
+  // didn't find the thread
+  if( i == MAX_ACCOUNTS && all_accounts->threads[i-1] != thread ) { 
+    return 0;
+  }
+  if( all_accounts->accounts[i] && all_accounts->accounts[i]->in_session ) {
+    return 1;
+  }
+  return 0;
+
+}
 /*
 Eliminate all sockets
 */
@@ -85,6 +105,8 @@ ClientResponsePtr handleClientCommand(int thread, ClientRequestPtr client_inform
 {
   float balance;
   AccountPtr account;
+  int success;
+  char message[255];
 
   ClientResponsePtr return_value;
   return_value = malloc(sizeof(struct client_response));
@@ -92,16 +114,31 @@ ClientResponsePtr handleClientCommand(int thread, ClientRequestPtr client_inform
   account = getThreadAccount(thread, ACCOUNTS);
   if(strcmp(client_information->argument, EMPTY_STRING) == 0){
     if(strcmp(client_information->command, QUERY) == 0){
+
+      if( !isThreadInSession(thread, ACCOUNTS)) {
+        return_value->command_performed = 0;
+        return return_value;
+      }
+
       balance = accountGetBalance(thread,ACCOUNTS);
       return_value->balance = balance;
       return_value->is_query = 1;
+      return_value->command_performed = 1;
+      sprintf(message,"%f", balance);
+      strcpy(return_value->message, message);
+      bzero(message,255);
       return return_value;
     }
 
     if(strcmp(client_information->command, END) == 0){
+      if( !isThreadInSession(thread, ACCOUNTS)) {
+        return_value->command_performed = 0;
+        return return_value;
+      }
       accountEndConnection(thread, ACCOUNTS);
       return_value->balance = 1;
       return_value->is_query = 0;
+      return_value->command_performed = 1;
       return return_value;
     }
 
@@ -109,44 +146,67 @@ ClientResponsePtr handleClientCommand(int thread, ClientRequestPtr client_inform
       accountEndConnection(thread, ACCOUNTS);
       return_value->balance =-1;
       return_value->is_query = 0;
+      return_value->command_performed = 1;
       return return_value;
     }
   } else {
     if(strcmp(client_information->command, WITHDRAW) == 0){
-      accountWithdraw(thread, atof(client_information->argument), ACCOUNTS);
-      return_value->balance = 1;
-      return_value->is_query = 0;
+      if( !isThreadInSession(thread, ACCOUNTS)) {
+        return_value->command_performed = 0;
+        return return_value;
+      }
+      return_value->command_performed = 0;
+      success = accountWithdraw(thread, atof(client_information->argument), ACCOUNTS);
+      if( success == 1 ){
+        return_value->command_performed = 1;
+        return return_value;
+      }
+      strcpy(return_value->message, "Could not withdraw funds.");
       return return_value;
+
     }
 
     if(strcmp(client_information->command, DEPOSIT) == 0){
+      if( !isThreadInSession(thread, ACCOUNTS)) {
+        return_value->command_performed = 0;
+        return return_value;
+      }
+
       accountDeposit(thread, atof(client_information->argument), ACCOUNTS);
-      return_value->balance = 1;
-      return_value->is_query = 0;
+      return_value->command_performed = 1;
       return return_value;
     }
 
     if(strcmp(client_information->command, CREATE) == 0){
-      account = accountCreate(client_information->argument, ACCOUNTS);
-      if( account != NULL ) {
-        return_value->balance = 1;
-        return_value->is_query = 0;
+      
+      if( isThreadInSession(thread, ACCOUNTS)) {
+        return_value->command_performed = 0;
         return return_value;
       }
-      return_value->balance = 0;
-      return_value->is_query = 0;
+
+      account = accountCreate(client_information->argument, ACCOUNTS);
+      if( account != NULL ) {
+        return_value->command_performed = 1;
+        return return_value;
+      }
+      return_value->command_performed = 0;
       return return_value;
 
     }
     if(strcmp(client_information->command, SERVE) == 0){
+      
+      // check if thread is already serving an account
+      if( isThreadInSession(thread, ACCOUNTS)) {
+        return_value->command_performed = 0;
+        return return_value;
+      }
+
       accountServe(thread, client_information->argument, ACCOUNTS);
-      return_value->balance = 1;
-      return_value->is_query = 0;
+      return_value->command_performed = 1;
       return return_value;
     }
   }
-  return_value->balance = 0;
-  return_value->is_query = 0;
+  return_value->command_performed = 0;
   return return_value;
 }
 
@@ -166,7 +226,7 @@ void *writeAccountsEveryTwentySeconds(void *arg)
     sleep(SLEEP_TIME);
     pthread_mutex_lock(&lock);
     if(ACCOUNTS->accounts[0] != NULL){
-      printf("Accounts: [\n last_index: %d", ACCOUNTS->last_account_index);
+      printf("Accounts: [\n");
       for(account_index = 0; account_index <= MAX_ACCOUNTS; account_index++){
         accountPrint(ACCOUNTS->accounts[account_index]);
       }
@@ -249,7 +309,7 @@ void createClientServiceThread(void * params)
   int n;
   char buffer[256];
   int kill_socket_in_array_flag;
-  char balance[100];
+  char message[255];
   ClientRequestPtr client_information;
   ClientResponsePtr handle_client_response;
 
@@ -272,22 +332,35 @@ void createClientServiceThread(void * params)
     }
     // send command to handler
     handle_client_response = handleClientCommand(cs_sockinfo->sockfd, client_information);
-    if(handle_client_response->is_query == 1){
-      n = sprintf(balance, "Account Balance: %f \n", handle_client_response->balance);
-      write(cs_sockinfo->sockfd, balance, 100);
+    
+    if(handle_client_response->command_performed != 1) {
+      printf("command not executed\n");
+    }else{
+      printf("command executed\n");
     }
+    if(strlen(handle_client_response->message) >0) {
+      sprintf(message,"'%s'", handle_client_response->message);
+      write(cs_sockinfo->sockfd, message, 255);
+    }
+
+    free(handle_client_response);
 
     if(handle_client_response->is_query == 0 && handle_client_response->balance == -1){
       break;
     }
 
     bzero(buffer, 256);
+    bzero(message, 255);
   }
+  // deal with a quit signal
+
+  accountEndConnection(cs_sockinfo->sockfd, ACCOUNTS); // end the connection, if one is open
   write(cs_sockinfo->sockfd, "quit", 4);
   kill_socket_in_array_flag = killSocket( cs_sockinfo->sockfd);
   if( kill_socket_in_array_flag == 0){
     error("ERROR in removing socket from SOCKETS array \n");
   }
+
   printf("Exiting socket %i\n", cs_sockinfo->sockfd);
   close(cs_sockinfo->sockfd);
   pthread_exit(NULL);

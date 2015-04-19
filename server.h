@@ -22,6 +22,8 @@ typedef struct client_request* ClientRequestPtr;
 struct client_response{
   float balance;
   int is_query;
+  int command_performed;
+  char message[255];
 };
 typedef struct client_response* ClientResponsePtr;
 
