@@ -99,13 +99,17 @@ ClientResponsePtr handleClientCommand(int thread, ClientRequestPtr client_inform
     }
 
     if(strcmp(client_information->command, END) == 0){
-      //accountEnd(int thread);
-      //return 1;
+      accountEndConnection(thread, ACCOUNTS);
+      return_value->balance = 1;
+      return_value->is_query = 0;
+      return return_value;
     }
 
     if(strcmp(client_information->command, QUIT) == 0){
-      //accountEnd(int thread);
-      //return 1;
+      accountEndConnection(thread, ACCOUNTS);
+      return_value->balance =-1;
+      return_value->is_query = 0;
+      return return_value;
     }
   } else {
     if(strcmp(client_information->command, WITHDRAW) == 0){
@@ -272,6 +276,11 @@ void createClientServiceThread(void * params)
       n = sprintf(balance, "Account Balance: %f \n", handle_client_response->balance);
       write(cs_sockinfo->sockfd, balance, 100);
     }
+
+    if(handle_client_response->is_query == 0 && handle_client_response->balance == -1){
+      break;
+    }
+
     bzero(buffer, 256);
   }
   write(cs_sockinfo->sockfd, "quit", 4);
