@@ -28,46 +28,106 @@
 AccountStoragePtr ACCOUNTS;
 pthread_mutex_t lock;
 
-// int handleClientCommand(int thread, ClientRequestPtr client_information)
-// {
-//   float balance;
-//   if(strcmp(client_information->argument, EMPTY_STRING) == 0){
-//     if(strcmp(client_information->command, QUERY) == 0){
-//       balance = accountQuery(int thread);
-//       return balance;
-//     }
+int* SOCKETS;
 
-//     if(strcmp(client_information->command, END) == 0){
-//       accountEnd(int thread);
-//       return 1;
-//     }
+int killSocket(int sockfd)
+{
+  int socket_index;
+  socket_index = 0;
+  while(SOCKETS[socket_index] != sockfd){
+    socket_index += 1;
+  }
+  if(SOCKETS[socket_index] != sockfd &&
+    socket_index == sizeof(int)*SOMAXCONN){
+    return 0;
+  }
+  SOCKETS[socket_index] = 0;
+  return 1;
+}
 
-//     if(strcmp(client_information->command, QUIT)) == 0){
-//       accountEnd(int thread);
-//       return 1;
-//     }
-//   } else {
-//     if(strcmp(client_information->command, WITHDRAW) == 0){
-//       accountWithdraw(int thread, client_information->argument);
-//       return 1;
-//     }
+/*
+Eliminate all sockets
+*/
+int closeAllSockets()
+{
+  int socket_index;
+  int n;
+  socket_index = 0;
+  while(SOCKETS[socket_index] != 0){
+    printf("Socket: %i being closed right now \n", SOCKETS[socket_index] );
+    n = write(SOCKETS[socket_index], "quit", 4);
+    if(n < 0)
+      return 0;
+    close(SOCKETS[socket_index]);
+    socket_index += 1;
+  }
+  return 1;
+}
 
-//     if(strcmp(client_information->command, DEPOSIT) == 0){
-//       accountDeposit(int thread, client_information->argument);
-//       return 1;
-//     }
+void signal_handler(int signo)
+{
+  int close_sockets_flag;
+  if(signo == SIGINT){
+    printf("Closing server and all threads...\n");
+    close_sockets_flag = closeAllSockets();
+    if( close_sockets_flag == 1 ){
+      exit(1);
+    }
+    if( close_sockets_flag == 0){
+      printf("Can't exit.");
+    }
+  }
+  error(0);
+}
 
-//     if(strcmp(client_information->command, CREATE) == 0){
-//       accountCreate(int thread, client_information->argument);
-//       return 1;
-//     }
-//     if(strcmp(client_information->command, SERVE) == 0){
-//       accountServe(int thread, client_information->argument);
-//       return 1;
-//     }
-//   }
-//   return 0;
-// }
+
+int handleClientCommand(int thread, ClientRequestPtr client_information)
+{
+  float balance;
+  AccountPtr account;
+
+  account = getThreadAccount(thread, ACCOUNTS);
+  if(strcmp(client_information->argument, EMPTY_STRING) == 0){
+    if(strcmp(client_information->command, QUERY) == 0){
+      //balance = accountGetBalance(thread);
+      return 1;
+    }
+
+    if(strcmp(client_information->command, END) == 0){
+      //accountEnd(int thread);
+      return 1;
+    }
+
+    if(strcmp(client_information->command, QUIT) == 0){
+      //accountEnd(int thread);
+      return 1;
+    }
+  } else {
+    if(strcmp(client_information->command, WITHDRAW) == 0){
+      //accountWithdraw(int thread, client_information->argument);
+      return 1;
+    }
+
+    if(strcmp(client_information->command, DEPOSIT) == 0){
+      // accountDeposit(int thread, client_information->argument);
+      return 1;
+    }
+
+    if(strcmp(client_information->command, CREATE) == 0){
+      account = accountCreate(client_information->argument, ACCOUNTS);
+      if( account != NULL ) {
+        return 1;
+      }
+      return 0;
+      
+    }
+    if(strcmp(client_information->command, SERVE) == 0){
+      // accountServe(int thread, client_information->argument);
+      return 1;
+    }
+  }
+  return 0;
+}
 
 /* Thread that runs every twenty seconds,
 which prints the account information*/
@@ -79,22 +139,39 @@ which prints the account information*/
 */
 void *writeAccountsEveryTwentySeconds(void *arg)
 {
-  int account_index;
+  int account_index, socket_index;
 
   while(1){
     sleep(SLEEP_TIME);
     pthread_mutex_lock(&lock);
     if(ACCOUNTS->accounts[0] != NULL){
       for(account_index = 0; account_index <= MAX_ACCOUNTS; account_index++){
-        printf("Name: %s \n", ACCOUNTS->accounts[account_index]->name);
-        printf("Balance: %f \n", ACCOUNTS->accounts[account_index]->balance);
-        printf("IN SESSION: %i \n\n\n", ACCOUNTS->accounts[account_index]->in_session);
+        accountPrint(ACCOUNTS->accounts[account_index]);
       }
     }
-    printf("Sup Simple Simon \n");
+    // for(socket_index = 0; socket_index <= MAX_ACCOUNTS; socket_index++){
+    //     printf("%i \n", SOCKETS[socket_index]);
+    // }
     pthread_mutex_unlock(&lock);
   }
   pthread_exit(NULL);
+}
+/*
+Add socket to global array of sockets if not full
+*/
+int addSocket(int sockfd)
+{
+  int socket_index;
+
+  socket_index = 0;
+  while(SOCKETS[socket_index] != 0){
+    socket_index += 1;
+  }
+  if(SOCKETS[socket_index] != 0)
+    return 0;
+
+  SOCKETS[socket_index] = sockfd;
+  return 1;
 }
 
 
@@ -147,12 +224,12 @@ void createClientServiceThread(void * params)
   SockInfo cs_sockinfo = (SockInfo) params;
   int n;
   char buffer[256];
+  int kill_socket_in_array_flag;
   ClientRequestPtr client_information;
-  const char delimiter[2] = "\0";
 
   printf("In client service socket: %i \n", cs_sockinfo->sockfd);
 
-  n = write(cs_sockinfo->sockfd, "Connected to server. Ready for commands\n", 255);
+  n = write(cs_sockinfo->sockfd, "Connected to server. Ready for commands", 255);
   if( n < 0) {
     error("ERROR on writing to socket");
   }
@@ -162,15 +239,21 @@ void createClientServiceThread(void * params)
   // Read commands from socket
   while( read(cs_sockinfo->sockfd, buffer, 255) > 0){
     client_information = getCommandFromBuffer(buffer);
-    printf("%s, %s \n", client_information->command,client_information->argument);
-    //write(cs_sockinfo->sockfd, client_information->argument, strlen(client_information->argument));
-    write(cs_sockinfo->sockfd, client_information->command, strlen(client_information->command));
+    printf("Command: %s, %s \n", client_information->command,client_information->argument);
     
+    if(strcmp(client_information->command, "quit") == 0) {
+      break;
+    }
     // send command to handler
-    // handleClientCommand(cs_sockinfo->sockfd, client_information);
+    handleClientCommand(cs_sockinfo->sockfd, client_information);
+    
     bzero(buffer, 256);
   }
-
+  write(cs_sockinfo->sockfd, "quit", 4);
+  kill_socket_in_array_flag = killSocket( cs_sockinfo->sockfd);
+  if( kill_socket_in_array_flag == 0){
+    error("ERROR in removing socket from SOCKETS array \n");
+  }
   printf("Exiting socket %i\n", cs_sockinfo->sockfd);
   close(cs_sockinfo->sockfd);
   pthread_exit(NULL);
@@ -215,6 +298,7 @@ void createSessionAcceptorThread(void* params)
    int conn_count = 0;
    pthread_t threads[SOMAXCONN];
    int tids[SOMAXCONN];
+   int add_to_socket_flag = 0;
 
    while(conn_count <= SOMAXCONN){
 
@@ -225,6 +309,11 @@ void createSessionAcceptorThread(void* params)
       if(cs_sockinfo->sockfd < 0){
         error("ERROR on accept");
       }
+
+      /* Add socket to sockets global array */
+      add_to_socket_flag = addSocket(cs_sockinfo->sockfd);
+      if(add_to_socket_flag == 0)
+        error("ERROR on adding to sockets array");
       tids[conn_count] = pthread_create( &threads[conn_count],
         NULL, (void*(*)(void*))createClientServiceThread, (void*)cs_sockinfo);
       conn_count += 1;
@@ -239,7 +328,10 @@ int main(int argc, char** argv){
   int timer_thread_tid;
   pthread_t timer_thread;
 
+  signal(SIGINT, signal_handler);
+
   ACCOUNTS = (AccountStoragePtr) malloc(sizeof(struct account_storage));
+  SOCKETS = malloc(sizeof(int) * SOMAXCONN);
   //Session Acceptor Thread
   pthread_t thread;
   int rc, i;

@@ -5,7 +5,7 @@ client: client.c
 	$(COMPILER) $(CCFLAGS) client.c -o client
 
 server: server.c
-	$(COMPILER) $(CCFLAGS) server.c -o server
+	$(COMPILER) $(CCFLAGS) server.c accounts.c -o server
 
 acctest: account_test.c
 	$(COMPILER) $(CCFLAGS) -o acc_test account_test.c accounts.c

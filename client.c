@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <pthread.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -16,14 +17,39 @@ void error(const char *msg)
     exit(0);
 }
 
+void signal_handler(int signo)
+{
+    if(signo == SIGINT){
+        printf("Signal Interrupt handled. Exiting \n");
+        exit(1);
+    }
+}
+
+void server_listener(void * params)
+{
+  char buffer[255];
+  int socket;
+
+  socket = (int) params;
+  while( read(socket, buffer, 255) > 0){
+    if(strcmp("quit", buffer) == 0){
+      signal_handler(SIGINT);
+    };
+    printf("%s\n", buffer);
+    bzero(buffer,255);
+  }
+
+}
+
 int main(int argc, char *argv[])
 {
+    signal(SIGINT, signal_handler);
+
     int sockfd, portno, n;
     struct sockaddr_in serv_addr;
     struct hostent *server;
-    const char delimiter[2] = "\0";
     char server_buffer[256], client_buffer[256];
-
+    pthread_t listener_thread;
 
     if (argc < 3) {
        fprintf(stderr,"usage %s hostname port\n", argv[0]);
@@ -46,31 +72,24 @@ int main(int argc, char *argv[])
          (char *)&serv_addr.sin_addr.s_addr,
          server->h_length);
     serv_addr.sin_port = htons(portno);
-
-
+    
     if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0)
         error("ERROR connecting");
+    // create a thread for listening to the server
     else
-      read(sockfd,server_buffer,255);
+      pthread_create( &listener_thread, NULL,
+       (void*(*)(void*))server_listener, (void*)sockfd);
 
-    printf("%s >>", server_buffer);
-    bzero(server_buffer,255);
+    printf(">>");
     while( fgets(client_buffer, 255, stdin) != NULL ) {
+    
         // send input to server
         n = send(sockfd, client_buffer, strlen(client_buffer), MSG_OOB);
         if(n < 0)
           error("ERROR writing to socket");
-        
-        // wait for response
-        n = read(sockfd,server_buffer,255);
-        if (n < 0)
-          error("ERROR reading from socket");
-
-        printf("%s \n", server_buffer);
-        bzero(server_buffer,255);
-        printf(">> ");
+        printf(">>");
     }
-    
+
     close(sockfd);
     return 0;
 }

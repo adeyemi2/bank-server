@@ -44,25 +44,39 @@ void accountEndConnection(int thread, AccountStoragePtr all_accounts) {
 
 }
 
-AccountPtr accountCreate(char* name, int index){
-	//check account name is valid
+AccountPtr accountCreate(char* name, AccountStoragePtr all_accounts){
+	int i;
+
+  //check account name is valid
 	if(name == NULL || strcmp(name, "") == 0){
 		printf("NULL name passed to AccountCreate");
 		return NULL;
 	}
-	else{
-		AccountPtr acc;
-		acc = (AccountPtr) malloc( sizeof( struct account));
-		if(acc == NULL){
-			printf("Malloc failed in AccountCreate");
-			return NULL;
-		}
-		acc->name = name;
-		acc->balance = 0.0;
-		acc->in_session = 0;
-		acc->index = index;
-		return acc;
+  // check if name exists
+  i = 0;
+	while( i < MAX_ACCOUNTS) {
+    if( all_accounts->accounts[i] == NULL ) {
+      break;
+    }
+    if( strcmp(all_accounts->accounts[i]->name, name) == 0) {
+      printf("Account name already exists\n");
+      return NULL;
+    }
+    i++;
+  }
+
+	AccountPtr acc;
+	acc = (AccountPtr) malloc( sizeof( struct account));
+	if(acc == NULL){
+		printf("Malloc failed in AccountCreate");
+		return NULL;
 	}
+	acc->name = name;
+	acc->balance = 0.0;
+	acc->in_session = 0;
+	//acc->index = index;
+	return acc;
+
 }
 
 //return balance on success, -1 on failure
@@ -115,7 +129,7 @@ int accountWithdraw(float amount, AccountPtr account){
 }
 
 void accountPrint(AccountPtr account ) {
-if(account == NULL){
+  if(account == NULL){
     printf("No details for NULL account to print");
     return;
   }
@@ -139,7 +153,7 @@ void printAccounts(AccountStoragePtr bank){
 	//because this doesnt work
 	while(i <= MAX_ACCOUNTS){
 		if(bank->accounts[i] != NULL){
-			printAccount(bank->accounts[i]);
+			accountPrint(bank->accounts[i]);
 		}
 		i++;
 	}
@@ -163,4 +177,24 @@ int addAccount(AccountStoragePtr bank, AccountPtr account){
 		i++;
 	}
 	return 0;
+}
+
+AccountPtr getThreadAccount(int thread, AccountStoragePtr all_accounts) {
+  AccountPtr acct;
+  int i;
+  i = 0;
+
+  acct = all_accounts->accounts[i];
+  for(i; i< MAX_ACCOUNTS; i++) {
+    if( all_accounts->threads[i] == thread)
+      acct = all_accounts->accounts[i];
+      break;
+  }
+
+  if( acct != NULL ) {
+    return acct;
+  }
+
+  return NULL;
+
 }

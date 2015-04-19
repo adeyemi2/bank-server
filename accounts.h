@@ -20,7 +20,7 @@ typedef struct account_storage* AccountStoragePtr;
 AccountPtr accountGet(char *accountname, AccountStoragePtr collection);
 
 //-account create
-AccountPtr accountCreate(char* name, int index);
+AccountPtr accountCreate(char* name, AccountStoragePtr all_accounts);
 
 //-account query
 float accountGetBalance(AccountPtr account);
@@ -35,8 +35,11 @@ int accountWithdraw(float amount, AccountPtr account);
 // print account details
 void accountPrint(AccountPtr account);
 
+void printAccounts(AccountStoragePtr bank);
+
 void accountServe(int thread, char* account_name, AccountStoragePtr all_accounts);
 
 void accountEndConnection(int thread, AccountStoragePtr all_accounts);
 
+AccountPtr getThreadAccount(int thread, AccountStoragePtr all_accounts);
 #endif
