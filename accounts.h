@@ -7,6 +7,7 @@ struct account{
   char *name;
   float balance;
   int in_session;
+  int index;
 };
 typedef struct account* AccountPtr;
 
@@ -16,23 +17,23 @@ struct account_storage{
 };
 typedef struct account_storage* AccountStoragePtr;
 
-AccountPtr get_account(char *accountname);
+AccountPtr accountGet(char *accountname, AccountStoragePtr collection);
 
 //-account create
 AccountPtr accountCreate(char* name, int index);
 
 //-account query
-float getBalance(AccountPtr account);
+float accountGetBalance(AccountPtr account);
 
 //-account deposit
 //deposit should change account balance and return 0 for failure 1 for success
-int deposit(float amount, AccountPtr account);
+int accountDeposit(float amount, AccountPtr account);
 
 //withdraw should change account balance and return 0 for failure 1 for success
-int withdraw(float amount, AccountPtr account);
+int accountWithdraw(float amount, AccountPtr account);
 
 // print account details
-void PrintAccount(AccountPtr account);
+void accountPrint(AccountPtr account);
 
 void accountServe(int thread, char* account_name, AccountStoragePtr all_accounts);
 

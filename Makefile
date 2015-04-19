@@ -8,7 +8,7 @@ server: server.c
 	$(COMPILER) $(CCFLAGS) server.c -o server
 
 acctest: account_test.c
-	$(COMPILER) $(CCFLAGS) account_test.c -o acc_test
+	$(COMPILER) $(CCFLAGS) -o acc_test account_test.c accounts.c
 
 all: client server
 

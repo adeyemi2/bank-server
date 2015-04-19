@@ -1,12 +1,11 @@
 #include "accounts.h"
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
-
-
-AccountPtr get_account(char *accountname, AccountStoragePtr collection) {
+AccountPtr accountGet(char *account_name, AccountStoragePtr collection) {
   int i;
-  for(i=0; i < collection->accounts.length(); i++){
+  for(i=0; i < MAX_ACCOUNTS; i++){
     if(strcmp(collection->accounts[i]->name, account_name) == 0){
       return collection->accounts[i];
     }
@@ -15,7 +14,7 @@ AccountPtr get_account(char *accountname, AccountStoragePtr collection) {
   return NULL;
 }
 
-void accountServe(int socket, char* account_name, AccountStoragePtr all_accounts){
+void accountServe(int thread, char* account_name, AccountStoragePtr all_accounts){
 	/* Find account in accounts that matches name of account name */
 	int tmp_account_index;
 	tmp_account_index = 0;
@@ -26,27 +25,26 @@ void accountServe(int socket, char* account_name, AccountStoragePtr all_accounts
 	} while( strcmp(all_accounts->accounts[tmp_account_index]->name, account_name) != 0);
 
 	all_accounts->accounts[tmp_account_index]->in_session = 1;
-	all_accounts->connections[tmp_account_index] = socket;
+	all_accounts->threads[tmp_account_index] = thread;
 }
 
-void accountEndConnection(int socket, AccountStoragePtr all_accounts) {
-  int socket_index;
-  socket_index = 0;
+void accountEndConnection(int thread, AccountStoragePtr all_accounts) {
+  int thread_index;
+  thread_index = 0;
   /* find the index that corresponds to the account and socket */
-  for( socket_index < MAX_ACCOUNTS, socket_index++) {
-    if( all_accounts->connections[socket_index] != NULL && all_accounts->connections[socket_index] == socket) {
+  while(thread_index < MAX_ACCOUNTS) {
+    if( all_accounts->threads[thread_index] != 0 && all_accounts->threads[thread_index] == thread) {
       break;
     }
+    thread_index++;
   }
 
-  all_accounts->accounts[socket_index]->in_session = 0;
-  all_accounts->connections[socket_index] = 0;
+  all_accounts->accounts[thread_index]->in_session = 0;
+  all_accounts->threads[thread_index] = 0;
 
 }
 
 AccountPtr accountCreate(char* name, int index){
-
-	//BREAK
 	//check account name is valid
 	if(name == NULL || strcmp(name, "") == 0){
 		printf("NULL name passed to AccountCreate");
@@ -54,29 +52,29 @@ AccountPtr accountCreate(char* name, int index){
 	}
 	else{
 		AccountPtr acc;
-		acc = (AccountPtr) malloc( sizeof( struct Account));
+		acc = (AccountPtr) malloc( sizeof( struct account));
 		if(acc == NULL){
 			printf("Malloc failed in AccountCreate");
 			return NULL;
 		}
 		acc->name = name;
 		acc->balance = 0.0;
-		acc->active = 0;
+		acc->in_session = 0;
 		acc->index = index;
 		return acc;
 	}
 }
 
 //return balance on success, -1 on failure
-float getBalance(AccountPtr account){
+float accountGetBalance(AccountPtr account){
 	if(account == NULL){
 		printf("Invalid account");
-		return -1.0
+		return -1.0;
 	}
 	return account->balance;
 }
 //return 1 for success, 0 for failure
-int deposit(float amount, AccountPtr account){
+int accountDeposit(float amount, AccountPtr account){
 	if(account == NULL){
 		printf("Invalid account");
 		return 0;
@@ -94,7 +92,7 @@ int deposit(float amount, AccountPtr account){
 	return 1;
 }
 //return 1 for success, 0 for failure
-int withdraw(float amount, AccountPtr account){
+int accountWithdraw(float amount, AccountPtr account){
 	if(account == NULL){
 		printf("Invalid account");
 		return 0;
@@ -116,17 +114,17 @@ int withdraw(float amount, AccountPtr account){
 	return 1;
 }
 
-void printAccount(AccountPtr account ) {
+void accountPrint(AccountPtr account ) {
 if(account == NULL){
     printf("No details for NULL account to print");
     return;
   }
   else{
     char * active = "True";
-    if (account->active == 0){
+    if (account->in_session == 0){
       active = "False";
     }
-    printf("<Account: %s, Balance: %f, Currently Active: %s >" , account->name, account->balance, active);
+    printf("<Account: %s, Balance: %f, Currently Active: %s >\n" , account->name, account->balance, active);
   }
 }
 
@@ -148,16 +146,16 @@ void printAccounts(AccountStoragePtr bank){
 }
 
 //return 1 for success, 0 for failure
-int addAccount(BankPtr bank, AccountPtr account){
+int addAccount(AccountStoragePtr bank, AccountPtr account){
 	int i = 0;
 	if(bank == NULL){
 		printf("Can't print details for NULL bank...");
-		return;
+		return 0;
 	}
 
 	//for loop through the bank accounts, how do i do this with just a pointer again???
 	//because this doesnt work
-	while(i<=19){
+	while(i<=MAX_ACCOUNTS){
 		if(bank->accounts[i] == NULL){
 			bank->accounts[i] = account;
 			return 1;
