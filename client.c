@@ -60,14 +60,10 @@ void client_listener(void * params)
         error("ERROR writing to socket");
       printf(">>");
   }  
-
-
 }
 
 int main(int argc, char *argv[])
 {
-    signal(SIGINT, signal_handler);
-
     int sockfd, portno;
     struct sockaddr_in serv_addr;
     struct hostent *server;
