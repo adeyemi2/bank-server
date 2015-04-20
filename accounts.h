@@ -23,6 +23,7 @@ AccountPtr accountGet(char *accountname, AccountStoragePtr collection);
 //-account create
 AccountPtr accountCreate(char* name, AccountStoragePtr all_accounts);
 
+void destroyAccount(AccountPtr account);
 //-account query
 float accountGetBalance(int thread, AccountStoragePtr all_accounts);
 

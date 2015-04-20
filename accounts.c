@@ -163,6 +163,12 @@ AccountPtr accountCreate(char* name, AccountStoragePtr all_accounts){
 
 }
 
+void destroyAccount(AccountPtr account) {
+  if(account != NULL) {
+    free(account->name);
+    free(account);
+  }
+}
 
 void accountPrint(AccountPtr account ) {
   if(account == NULL){

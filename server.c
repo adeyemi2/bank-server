@@ -68,6 +68,25 @@ int isThreadInSession(int thread, AccountStoragePtr all_accounts)
 /*
 Eliminate all sockets
 */
+void shutdownServer() {
+  int i, close_sockets_flag;
+  printf("Closing server and all threads...\n");
+  close_sockets_flag = closeAllSockets();
+  if( close_sockets_flag == 1 ){
+    i = 0;
+    while(i < MAX_ACCOUNTS) {
+      destroyAccount(ACCOUNTS->accounts[i]);
+      i++;
+    }
+    free(ACCOUNTS);
+    free(SOCKETS);
+    exit(1);
+  }
+  if( close_sockets_flag == 0){
+    error("ERROR Could not shutdown.");
+  } 
+}
+
 int closeAllSockets()
 {
   int socket_index;
@@ -86,19 +105,11 @@ int closeAllSockets()
 
 void signal_handler(int signo)
 {
-  int close_sockets_flag;
   if(signo == SIGINT){
-    printf("Closing server and all threads...\n");
-    close_sockets_flag = closeAllSockets();
-    if( close_sockets_flag == 1 ){
-      exit(1);
-    }
-    if( close_sockets_flag == 0){
-      printf("Can't exit.");
-    }
+    shutdownServer();
   }
-  error(0);
 }
+
 
 
 ClientResponsePtr handleClientCommand(int thread, ClientRequestPtr client_information)
@@ -368,18 +379,10 @@ void createClientServiceThread(void * params)
 
 void createSessionAcceptorThread(void* params)
 {
-   UserArgs args = (UserArgs)params;
-
    //TCP/IP server logic
-   int sockfd, portno;
+   int sockfd;
    socklen_t clilen;
    struct sockaddr_in serv_addr, cli_addr;
-
-   /* Confirming that number of arguments is valid */
-   if( args->argc < 2 ){
-      fprintf(stderr, "ERROR, no port provided \n");
-      pthread_exit(NULL);
-   }
 
    /* Creating a socket */
    sockfd = socket( AF_INET, SOCK_STREAM, 0 );
@@ -389,10 +392,9 @@ void createSessionAcceptorThread(void* params)
 
    /* Binding a socket and the server address */
    bzero((char *)&serv_addr, sizeof(serv_addr));
-   portno = atoi(args->argv[1]);
    serv_addr.sin_family = AF_INET;
    serv_addr.sin_addr.s_addr = INADDR_ANY;
-   serv_addr.sin_port = htons( portno );
+   serv_addr.sin_port = htons( 3000 );
    if( bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0 ){
       error("ERROR on binding");
    }
@@ -423,7 +425,7 @@ void createSessionAcceptorThread(void* params)
         error("ERROR on adding to sockets array");
       tids[conn_count] = pthread_create( &threads[conn_count],
         NULL, (void*(*)(void*))createClientServiceThread, (void*)cs_sockinfo);
-      conn_count += 1;
+      conn_count++;
    }
    close(sockfd);
    pthread_join(threads[conn_count], NULL);
@@ -458,7 +460,7 @@ int main(int argc, char** argv){
   timer_thread_tid = pthread_create(&timer_thread, NULL,
     (void*(*)(void*))writeAccountsEveryTwentySeconds, NULL);
 
-  rc = pthread_create( &thread, NULL, (void*(*)(void*))createSessionAcceptorThread, (void* )test_obj);
+  rc = pthread_create( &thread, NULL, (void*(*)(void*))createSessionAcceptorThread, (void* )NULL);
 
   if( rc != 0 ){
      printf("pthread_create failed \n");

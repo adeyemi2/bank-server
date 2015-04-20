@@ -41,7 +41,7 @@ void server_listener(void * params)
     if( strlen(buffer) > 0) {
       printf("%s\n", buffer);
     }
-    printf(">>");
+    //printf(">>");
     bzero(buffer,255);
   }
 

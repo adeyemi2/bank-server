@@ -33,5 +33,8 @@ void error(const char *msg)
    exit(1);
 }
 
+void shutdownServer();
+
+int closeAllSockets();
 
 #endif
