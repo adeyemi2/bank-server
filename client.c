@@ -47,15 +47,31 @@ void server_listener(void * params)
 
 }
 
+void client_listener(void * params) 
+{
+  char client_buffer[255];
+  int socket, n;
+  socket = (int) params;
+
+  while( fgets(client_buffer, 255, stdin) != NULL ) {
+      // send input to server
+      n = send(socket, client_buffer, strlen(client_buffer), MSG_OOB);
+      if(n < 0)
+        error("ERROR writing to socket");
+      printf(">>");
+  }  
+
+
+}
+
 int main(int argc, char *argv[])
 {
     signal(SIGINT, signal_handler);
 
-    int sockfd, portno, n;
+    int sockfd, portno;
     struct sockaddr_in serv_addr;
     struct hostent *server;
-    char client_buffer[256];
-    pthread_t listener_thread;
+    pthread_t server_listener_thread, client_listener_thread;
 
     if (argc < 3) {
        fprintf(stderr,"usage %s hostname port\n", argv[0]);
@@ -83,19 +99,12 @@ int main(int argc, char *argv[])
         error("ERROR connecting");
     // create a thread for listening to the server
     else
-      pthread_create( &listener_thread, NULL,
+      pthread_create( &server_listener_thread, NULL,
        (void*(*)(void*))server_listener, (void*)sockfd);
 
-    printf(">>");
-    while( fgets(client_buffer, 255, stdin) != NULL ) {
+    pthread_create( &client_listener_thread, NULL,
+      (void*(*)(void*))client_listener, (void*)sockfd);
 
-        // send input to server
-        n = send(sockfd, client_buffer, strlen(client_buffer), MSG_OOB);
-        if(n < 0)
-          error("ERROR writing to socket");
-        printf(">>");
-    }
-
-    close(sockfd);
-    return 0;
+    pthread_join(server_listener_thread,NULL);
+    pthread_join(client_listener_thread,NULL);
 }

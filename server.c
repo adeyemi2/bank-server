@@ -13,6 +13,7 @@
 #include "accounts.h"
 #include "server.h"
 
+
 #define WITHDRAW "withdraw\0"
 #define DEPOSIT "deposit\0"
 #define SERVE "serve\0"
@@ -20,14 +21,14 @@
 #define END "end\0"
 #define QUIT "quit\0"
 #define CREATE "create\0"
-
 #define EMPTY_STRING ""
-#define SLEEP_TIME 6 /*make sure to change to 20 before submission */
+#define SLEEP_TIME 6 /* TODO make sure to change to 20 before submission */
 
 /* Global Variables */
 AccountStoragePtr ACCOUNTS;
+pthread_t timer_thread;
 pthread_mutex_t lock;
-
+int acceptor_socket;
 int* SOCKETS;
 
 int killSocket(int sockfd)
@@ -80,6 +81,7 @@ void shutdownServer() {
     }
     free(ACCOUNTS);
     free(SOCKETS);
+    close(acceptor_socket);
     exit(1);
   }
   if( close_sockets_flag == 0){
@@ -109,7 +111,6 @@ void signal_handler(int signo)
     shutdownServer();
   }
 }
-
 
 
 ClientResponsePtr handleClientCommand(int thread, ClientRequestPtr client_information)
@@ -389,7 +390,7 @@ void createSessionAcceptorThread(void* params)
    if( sockfd < 0 ){
       error("ERROR opening socket");
    }
-
+   acceptor_socket = sockfd;
    /* Binding a socket and the server address */
    bzero((char *)&serv_addr, sizeof(serv_addr));
    serv_addr.sin_family = AF_INET;
@@ -432,10 +433,8 @@ void createSessionAcceptorThread(void* params)
    pthread_exit(NULL);
 }
 
-
 int main(int argc, char** argv){
   int timer_thread_tid;
-  pthread_t timer_thread;
 
   signal(SIGINT, signal_handler);
 
