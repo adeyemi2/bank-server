@@ -57,7 +57,7 @@ int isThreadInSession(int thread, AccountStoragePtr all_accounts)
     i++;
   }
   // didn't find the thread
-  if( i == MAX_ACCOUNTS && all_accounts->threads[i-1] != thread ) { 
+  if( i == MAX_ACCOUNTS && all_accounts->threads[i-1] != thread ) {
     return 0;
   }
   if( all_accounts->accounts[i] && all_accounts->accounts[i]->in_session ) {
@@ -86,7 +86,7 @@ void shutdownServer() {
   }
   if( close_sockets_flag == 0){
     error("ERROR Could not shutdown.");
-  } 
+  }
 }
 
 int closeAllSockets()
@@ -190,7 +190,7 @@ ClientResponsePtr handleClientCommand(int thread, ClientRequestPtr client_inform
     }
 
     if(strcmp(client_information->command, CREATE) == 0){
-      
+
       if( isThreadInSession(thread, ACCOUNTS)) {
         return_value->command_performed = 0;
         return return_value;
@@ -206,7 +206,7 @@ ClientResponsePtr handleClientCommand(int thread, ClientRequestPtr client_inform
 
     }
     if(strcmp(client_information->command, SERVE) == 0){
-      
+
       // check if thread is already serving an account
       if( isThreadInSession(thread, ACCOUNTS)) {
         return_value->command_performed = 0;
@@ -344,7 +344,7 @@ void createClientServiceThread(void * params)
     }
     // send command to handler
     handle_client_response = handleClientCommand(cs_sockinfo->sockfd, client_information);
-    
+
     if(handle_client_response->command_performed != 1) {
       printf("command not executed\n");
     }else{
@@ -360,7 +360,7 @@ void createClientServiceThread(void * params)
     if(handle_client_response->is_query == 0 && handle_client_response->balance == -1){
       break;
     }
-
+    sleep(2);
     bzero(buffer, 256);
     bzero(message, 255);
   }
@@ -395,7 +395,7 @@ void createSessionAcceptorThread(void* params)
    bzero((char *)&serv_addr, sizeof(serv_addr));
    serv_addr.sin_family = AF_INET;
    serv_addr.sin_addr.s_addr = INADDR_ANY;
-   serv_addr.sin_port = htons( 3000 );
+   serv_addr.sin_port = htons( 3500 );
    if( bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0 ){
       error("ERROR on binding");
    }
