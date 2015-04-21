@@ -8,6 +8,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 
+#define CONNECT 3
 #define CONNECT_STATEMENT "Trying to connect again in 3 seconds..."
 #define QUIT_STATEMENT "quit\0"
 
@@ -92,12 +93,13 @@ int main(int argc, char *argv[])
          server->h_length);
     serv_addr.sin_port = htons(portno);
 
-    if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0)
-        error("ERROR connecting");
-    // create a thread for listening to the server
-    else
-      pthread_create( &server_listener_thread, NULL,
-       (void*(*)(void*))server_listener, (void*)sockfd);
+    while(connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0){
+      printf(" %s \n ", CONNECT_STATEMENT);
+      sleep(3);
+    }
+
+    pthread_create( &server_listener_thread, NULL,
+     (void*(*)(void*))server_listener, (void*)sockfd);
 
     pthread_create( &client_listener_thread, NULL,
       (void*(*)(void*))client_listener, (void*)sockfd);
