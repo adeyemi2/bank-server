@@ -32,7 +32,7 @@ void server_listener(void * params)
 
   socket = (int) params;
   while( read(socket, buffer, 255) > 0){
-    
+
     // handle the quit from the server
     if(strcmp("quit", buffer) == 0){
       signal_handler(SIGINT);
@@ -47,7 +47,7 @@ void server_listener(void * params)
 
 }
 
-void client_listener(void * params) 
+void client_listener(void * params)
 {
   char client_buffer[255];
   int socket, n;
@@ -59,7 +59,7 @@ void client_listener(void * params)
       if(n < 0)
         error("ERROR writing to socket");
       printf(">>");
-  }  
+  }
 }
 
 int main(int argc, char *argv[])
