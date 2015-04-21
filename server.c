@@ -360,7 +360,6 @@ void createClientServiceThread(void * params)
     if(handle_client_response->is_query == 0 && handle_client_response->balance == -1){
       break;
     }
-    sleep(2000);
     bzero(buffer, 256);
     bzero(message, 255);
   }

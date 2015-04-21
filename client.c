@@ -59,6 +59,7 @@ void client_listener(void * params)
       if(n < 0)
         error("ERROR writing to socket");
       printf(">>");
+      sleep(2);
   }
 }
 
