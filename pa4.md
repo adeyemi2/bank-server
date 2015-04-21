@@ -9,8 +9,8 @@ Our server.c program uses a manager-worker type system to handle sessions. A thr
 
 **createClientServiceThread** is also the function which handlies incoming messages from the client, and runs the appropriate command.
 
-Explain how the thread synchronization stuff works.
-
+######Thread Synchronization:
+The object that is used continuously in memory by the majority of functions is the ACCOUNTS global variable. This stores the collection of accounts, and also is susceptible to having the program not be thread safe. What this means is that if a certain function changes a piece of information in one of the accounts in the AccountStoragePtr object, another function at the same time in another thread may be trying to use that same account for printing the information. This can cause errors since the information printed would be out of date from the actual, newly changed information. In order to make sure the thread is synchronized, we create a mutual exclusion on the ACCOUNTS variable inside the thread that prints all accounts onto the server every twenty seconds. This locks any other thread trying to access the ACCOUNTS variable (specifically any client service thread), and ensures that all the information is up to date. The functions we specifically use to intiialize POSIX standard mutexes are pthread_mutex_lock, pthread_mutex_unlock and the pthread_mutex_init. 
 
 ###Client
 
