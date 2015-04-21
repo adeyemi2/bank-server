@@ -56,6 +56,10 @@ void client_listener(void * params)
 
   while( fgets(client_buffer, 255, stdin) != NULL ) {
       // send input to server
+      if( client_buffer[0] == '\0') {
+        continue;
+      }
+
       n = send(socket, client_buffer, strlen(client_buffer), MSG_OOB);
       if(n < 0)
         error("ERROR writing to socket");

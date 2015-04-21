@@ -129,6 +129,7 @@ ClientResponsePtr handleClientCommand(int thread, ClientRequestPtr client_inform
 
       if( !isThreadInSession(thread, ACCOUNTS)) {
         return_value->command_performed = 0;
+        strcpy(return_value->message, "Not connected to an account");
         return return_value;
       }
 
@@ -145,12 +146,14 @@ ClientResponsePtr handleClientCommand(int thread, ClientRequestPtr client_inform
     if(strcmp(client_information->command, END) == 0){
       if( !isThreadInSession(thread, ACCOUNTS)) {
         return_value->command_performed = 0;
+        strcpy(return_value->message, "Not connected to an account");
         return return_value;
       }
       accountEndConnection(thread, ACCOUNTS);
       return_value->balance = 1;
       return_value->is_query = 0;
       return_value->command_performed = 1;
+      strcpy(return_value->message, "Session ended.");
       return return_value;
     }
 
@@ -165,12 +168,14 @@ ClientResponsePtr handleClientCommand(int thread, ClientRequestPtr client_inform
     if(strcmp(client_information->command, WITHDRAW) == 0){
       if( !isThreadInSession(thread, ACCOUNTS)) {
         return_value->command_performed = 0;
+        strcpy(return_value->message, "Not connected to an account");
         return return_value;
       }
       return_value->command_performed = 0;
       success = accountWithdraw(thread, atof(client_information->argument), ACCOUNTS);
       if( success == 1 ){
         return_value->command_performed = 1;
+        strcpy(return_value->message, "Withdraw success.");
         return return_value;
       }
       strcpy(return_value->message, "Could not withdraw funds.");
@@ -181,10 +186,12 @@ ClientResponsePtr handleClientCommand(int thread, ClientRequestPtr client_inform
     if(strcmp(client_information->command, DEPOSIT) == 0){
       if( !isThreadInSession(thread, ACCOUNTS)) {
         return_value->command_performed = 0;
+        strcpy(return_value->message, "Not connected to an account");
         return return_value;
       }
 
       accountDeposit(thread, atof(client_information->argument), ACCOUNTS);
+      strcpy(return_value->message, "Deposit success.");
       return_value->command_performed = 1;
       return return_value;
     }
@@ -193,14 +200,17 @@ ClientResponsePtr handleClientCommand(int thread, ClientRequestPtr client_inform
 
       if( isThreadInSession(thread, ACCOUNTS)) {
         return_value->command_performed = 0;
+        strcpy(return_value->message, "Cannot create account");
         return return_value;
       }
 
       account = accountCreate(client_information->argument, ACCOUNTS);
       if( account != NULL ) {
         return_value->command_performed = 1;
+        strcpy(return_value->message, "Account created.");
         return return_value;
       }
+      strcpy(return_value->message, "Account already exists.");
       return_value->command_performed = 0;
       return return_value;
 
@@ -210,14 +220,22 @@ ClientResponsePtr handleClientCommand(int thread, ClientRequestPtr client_inform
       // check if thread is already serving an account
       if( isThreadInSession(thread, ACCOUNTS)) {
         return_value->command_performed = 0;
+        strcpy(return_value->message, "Already connected to an account");
         return return_value;
       }
 
-      accountServe(thread, client_information->argument, ACCOUNTS);
-      return_value->command_performed = 1;
+      success = accountServe(thread, client_information->argument, ACCOUNTS);
+      if( success == 1 ) {
+        strcpy(return_value->message, "Serving account.");
+        return_value->command_performed = 1;
+        return return_value;
+      }
+      strcpy(return_value->message, "Account not found.");
+      return_value->command_performed = 0;
       return return_value;
     }
   }
+  strcpy(return_value->message, "Invalid command.");
   return_value->command_performed = 0;
   return return_value;
 }
@@ -350,7 +368,8 @@ void createClientServiceThread(void * params)
     }else{
       printf("command executed\n");
     }
-    if(strlen(handle_client_response->message) >0) {
+
+    if( strlen(handle_client_response->message) >0) {
       sprintf(message,"'%s'", handle_client_response->message);
       write(cs_sockinfo->sockfd, message, 255);
     }
