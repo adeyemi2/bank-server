@@ -39,7 +39,7 @@ void accountPrint(AccountPtr account);
 
 void printAccounts(AccountStoragePtr bank);
 
-void accountServe(int thread, char* account_name, AccountStoragePtr all_accounts);
+int accountServe(int thread, char* account_name, AccountStoragePtr all_accounts);
 
 void accountEndConnection(int thread, AccountStoragePtr all_accounts);
 

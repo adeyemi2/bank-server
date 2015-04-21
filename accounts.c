@@ -79,7 +79,7 @@ int accountDeposit(int thread, float amount, AccountStoragePtr all_accounts){
 }
 
 
-void accountServe(int thread, char* account_name, AccountStoragePtr all_accounts){
+int accountServe(int thread, char* account_name, AccountStoragePtr all_accounts){
 	/* Find account in accounts that matches name of account name */
 	int tmp_account_index;
 	tmp_account_index = 0;
@@ -90,11 +90,12 @@ void accountServe(int thread, char* account_name, AccountStoragePtr all_accounts
       strcmp(all_accounts->accounts[tmp_account_index]->name, account_name) == 0) {
         all_accounts->accounts[tmp_account_index]->in_session = 1;
         all_accounts->threads[tmp_account_index] = thread;
-        return;
+        return 1;
     }
     tmp_account_index++;
 	}
   printf("Account '%s' not found\n", account_name);
+  return 0;
 }
 
 void accountEndConnection(int thread, AccountStoragePtr all_accounts) {
